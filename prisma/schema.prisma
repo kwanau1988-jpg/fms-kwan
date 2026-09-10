@@ -32,10 +32,17 @@ model Tenant {
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz()
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz()
 
-  userTenants UserTenant[]
-  roles       Role[]
-  auditLogs   AuditLog[]
-  sampleItems SampleItem[]
+  userTenants        UserTenant[]
+  roles              Role[]
+  auditLogs          AuditLog[]
+  sampleItems        SampleItem[]
+  newsArticles       NewsArticle[]
+  personnelProfiles  PersonnelProfile[]
+  curricula          Curriculum[]
+  documentRequests   DocumentRequest[]
+  resources          Resource[]
+  reservations       Reservation[]
+  payrollPeriods     PayrollPeriod[]
 
   @@map("tenants")
 }
@@ -60,9 +67,15 @@ model User {
   createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz()
   updatedAt          DateTime  @updatedAt @map("updated_at") @db.Timestamptz()
 
-  userTenants UserTenant[]
-  authTokens  AuthToken[]
-  auditLogs   AuditLog[]   @relation("AuditActor")
+  userTenants        UserTenant[]
+  authTokens         AuthToken[]
+  auditLogs          AuditLog[]          @relation("AuditActor")
+  personnelProfile   PersonnelProfile?
+  requestedDocuments DocumentRequest[]   @relation("DocumentRequester")
+  documentApprovals  DocumentApproval[]  @relation("DocumentApprover")
+  reservations       Reservation[]       @relation("UserReservations")
+  attendanceRecords  AttendanceRecord[]  @relation("StudentAttendance")
+  payrollSlips       PayrollSlip[]       @relation("UserPayrollSlips")
 
   @@map("users")
 }
@@ -210,3 +223,346 @@ model SampleItem {
   @@index([tenantId])
   @@map("sample_items")
 }
+
+// ----------------------------------------------------
+// 1. ระบบจัดการข่าวสารประชาสัมพันธ์ (News & Announcements)
+// ----------------------------------------------------
+enum NewsCategory {
+  ACADEMIC
+  ACTIVITY
+  RESEARCH
+  GENERAL
+}
+
+enum PublishStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model NewsArticle {
+  id            String        @id @default(uuid()) @db.Uuid
+  tenantId      String        @map("tenant_id") @db.Uuid
+  titleTh       String        @map("title_th") @db.VarChar(255)
+  titleEn       String        @map("title_en") @db.VarChar(255)
+  slug          String        @db.VarChar(255)
+  summaryTh     String?       @map("summary_th") @db.Text
+  summaryEn     String?       @map("summary_en") @db.Text
+  contentTh     String        @map("content_th") @db.Text
+  contentEn     String        @map("content_en") @db.Text
+  category      NewsCategory  @default(GENERAL)
+  coverImageUrl String?       @map("cover_image_url") @db.VarChar(500)
+  attachments   Json          @default("[]") @db.JsonB
+  isPinned      Boolean       @default(false) @map("is_pinned")
+  viewCount     Int           @default(0) @map("view_count")
+  status        PublishStatus @default(DRAFT)
+  publishedAt   DateTime?     @map("published_at") @db.Timestamptz()
+  createdAt     DateTime      @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt     DateTime      @updatedAt @map("updated_at") @db.Timestamptz()
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, slug])
+  @@index([tenantId, status, publishedAt])
+  @@map("news_articles")
+}
+
+// ----------------------------------------------------
+// 2. ระบบจัดการบุคลากร (Faculty & Staff Directory)
+// ----------------------------------------------------
+model PersonnelProfile {
+  id            String   @id @default(uuid()) @db.Uuid
+  tenantId      String   @map("tenant_id") @db.Uuid
+  userId        String?  @unique @map("user_id") @db.Uuid
+  academicTitle String?  @map("academic_title") @db.VarChar(50)
+  firstNameTh   String   @map("first_name_th") @db.VarChar(100)
+  lastNameTh    String   @map("last_name_th") @db.VarChar(100)
+  firstNameEn   String   @map("first_name_en") @db.VarChar(100)
+  lastNameEn    String   @map("last_name_en") @db.VarChar(100)
+  departmentTh  String   @map("department_th") @db.VarChar(150)
+  departmentEn  String   @map("department_en") @db.VarChar(150)
+  positionTh    String   @map("position_th") @db.VarChar(150)
+  positionEn    String   @map("position_en") @db.VarChar(150)
+  email         String   @db.VarChar(255)
+  phoneExt      String?  @map("phone_ext") @db.VarChar(50)
+  roomNumber    String?  @map("room_number") @db.VarChar(50)
+  expertise     Json     @default("[]") @db.JsonB
+  education     Json     @default("[]") @db.JsonB
+  publications  Json     @default("[]") @db.JsonB
+  avatarUrl     String?  @map("avatar_url") @db.VarChar(500)
+  displayOrder  Int      @default(0) @map("display_order")
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz()
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User?  @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, departmentTh])
+  @@index([tenantId, displayOrder])
+  @@map("personnel_profiles")
+}
+
+// ----------------------------------------------------
+// 3. ระบบจัดการหลักสูตร (Academic Curricula & Programs)
+// ----------------------------------------------------
+enum DegreeLevel {
+  BACHELOR
+  MASTER
+  DOCTORAL
+  SHORT_COURSE
+}
+
+model Curriculum {
+  id             String       @id @default(uuid()) @db.Uuid
+  tenantId       String       @map("tenant_id") @db.Uuid
+  code           String       @db.VarChar(50)
+  nameTh         String       @map("name_th") @db.VarChar(255)
+  nameEn         String       @map("name_en") @db.VarChar(255)
+  degreeTh       String       @map("degree_th") @db.VarChar(255)
+  degreeEn       String       @map("degree_en") @db.VarChar(255)
+  degreeLevel    DegreeLevel  @default(BACHELOR) @map("degree_level")
+  studyPlan      Json         @default("[]") @db.JsonB
+  totalCredits   Int          @default(0) @map("total_credits")
+  tuitionFee     Decimal?     @map("tuition_fee") @db.Decimal(10, 2)
+  careerPaths    Json         @default("[]") @db.JsonB
+  brochurePdfUrl String?      @map("brochure_pdf_url") @db.VarChar(500)
+  status         String       @default("OPEN") @db.VarChar(50)
+  createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt      DateTime     @updatedAt @map("updated_at") @db.Timestamptz()
+
+  tenant  Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  courses Course[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId, degreeLevel])
+  @@map("curricula")
+}
+
+model Course {
+  id           String   @id @default(uuid()) @db.Uuid
+  tenantId     String   @map("tenant_id") @db.Uuid
+  curriculumId String   @map("curriculum_id") @db.Uuid
+  code         String   @db.VarChar(20)
+  titleTh      String   @map("title_th") @db.VarChar(255)
+  titleEn      String   @map("title_en") @db.VarChar(255)
+  credits      String   @db.VarChar(20)
+  description  String?  @db.Text
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz()
+
+  curriculum Curriculum         @relation(fields: [curriculumId], references: [id], onDelete: Cascade)
+  sessions   ClassroomSession[]
+
+  @@unique([curriculumId, code])
+  @@map("courses")
+}
+
+// ----------------------------------------------------
+// 4. ระบบบริหารจัดการและอนุมัติเอกสาร (E-Document & Approval Workflow)
+// ----------------------------------------------------
+enum DocumentStatus {
+  DRAFT
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum ApprovalDecision {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model DocumentRequest {
+  id             String         @id @default(uuid()) @db.Uuid
+  tenantId       String         @map("tenant_id") @db.Uuid
+  docNumber      String         @map("doc_number") @db.VarChar(100)
+  title          String         @db.VarChar(255)
+  docType        String         @map("doc_type") @db.VarChar(100)
+  requesterId    String         @map("requester_id") @db.Uuid
+  currentStep    Int            @default(1) @map("current_step")
+  status         DocumentStatus @default(PENDING)
+  attachmentUrls Json           @default("[]") @map("attachment_urls") @db.JsonB
+  metadata       Json           @default("{}") @db.JsonB
+  createdAt      DateTime       @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt      DateTime       @updatedAt @map("updated_at") @db.Timestamptz()
+
+  tenant    Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  requester User               @relation("DocumentRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  approvals DocumentApproval[]
+
+  @@unique([tenantId, docNumber])
+  @@index([tenantId, status])
+  @@index([requesterId])
+  @@map("document_requests")
+}
+
+model DocumentApproval {
+  id         String           @id @default(uuid()) @db.Uuid
+  requestId  String           @map("request_id") @db.Uuid
+  stepOrder  Int              @map("step_order")
+  approverId String           @map("approver_id") @db.Uuid
+  decision   ApprovalDecision @default(PENDING)
+  comment    String?          @db.Text
+  actionAt   DateTime?        @map("action_at") @db.Timestamptz()
+  createdAt  DateTime         @default(now()) @map("created_at") @db.Timestamptz()
+
+  request  DocumentRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  approver User            @relation("DocumentApprover", fields: [approverId], references: [id], onDelete: Cascade)
+
+  @@index([requestId, stepOrder])
+  @@map("document_approvals")
+}
+
+// ----------------------------------------------------
+// 5. ระบบจองห้องประชุมและยานพาหนะ (Facility & Vehicle Reservation)
+// ----------------------------------------------------
+enum ResourceType {
+  ROOM
+  VEHICLE
+}
+
+enum ReservationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+model Resource {
+  id              String       @id @default(uuid()) @db.Uuid
+  tenantId        String       @map("tenant_id") @db.Uuid
+  type            ResourceType @default(ROOM)
+  nameTh          String       @map("name_th") @db.VarChar(255)
+  nameEn          String       @map("name_en") @db.VarChar(255)
+  capacity        Int          @default(0)
+  locationOrPlate String       @map("location_or_plate") @db.VarChar(255)
+  amenities       Json         @default("[]") @db.JsonB
+  imageUrl        String?      @map("image_url") @db.VarChar(500)
+  isAvailable     Boolean      @default(true) @map("is_available")
+  createdAt       DateTime     @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt       DateTime     @updatedAt @map("updated_at") @db.Timestamptz()
+
+  tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  reservations Reservation[]
+
+  @@index([tenantId, type])
+  @@map("resources")
+}
+
+model Reservation {
+  id             String            @id @default(uuid()) @db.Uuid
+  tenantId       String            @map("tenant_id") @db.Uuid
+  resourceId     String            @map("resource_id") @db.Uuid
+  userId         String            @map("user_id") @db.Uuid
+  title          String            @db.VarChar(255)
+  startTime      DateTime          @map("start_time") @db.Timestamptz()
+  endTime        DateTime          @map("end_time") @db.Timestamptz()
+  attendeesCount Int               @default(1) @map("attendees_count")
+  contactPhone   String?           @map("contact_phone") @db.VarChar(50)
+  status         ReservationStatus @default(PENDING)
+  rejectReason   String?           @map("reject_reason") @db.Text
+  approvedById   String?           @map("approved_by_id") @db.Uuid
+  approvedAt     DateTime?         @map("approved_at") @db.Timestamptz()
+  createdAt      DateTime          @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt      DateTime          @updatedAt @map("updated_at") @db.Timestamptz()
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  resource Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  user     User     @relation("UserReservations", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, resourceId, startTime, endTime])
+  @@map("reservations")
+}
+
+// ----------------------------------------------------
+// 6. ระบบเช็คชื่อเข้าเรียน (Smart Attendance & Classroom Check-in)
+// ----------------------------------------------------
+enum AttendanceStatus {
+  PRESENT
+  LATE
+  ABSENT
+  EXCUSED
+}
+
+model ClassroomSession {
+  id           String    @id @default(uuid()) @db.Uuid
+  tenantId     String    @map("tenant_id") @db.Uuid
+  courseId     String    @map("course_id") @db.Uuid
+  instructorId String    @map("instructor_id") @db.Uuid
+  roomNumber   String?   @map("room_number") @db.VarChar(50)
+  sessionDate  DateTime  @map("session_date") @db.Date
+  startTime    String    @map("start_time") @db.VarChar(10)
+  endTime      String    @map("end_time") @db.VarChar(10)
+  qrToken      String?   @map("qr_token") @db.VarChar(255)
+  qrExpiresAt  DateTime? @map("qr_expires_at") @db.Timestamptz()
+  isActive     Boolean   @default(true) @map("is_active")
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt    DateTime  @updatedAt @map("updated_at") @db.Timestamptz()
+
+  course  Course             @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  records AttendanceRecord[]
+
+  @@index([tenantId, courseId])
+  @@map("classroom_sessions")
+}
+
+model AttendanceRecord {
+  id        String           @id @default(uuid()) @db.Uuid
+  tenantId  String           @map("tenant_id") @db.Uuid
+  sessionId String           @map("session_id") @db.Uuid
+  studentId String           @map("student_id") @db.Uuid
+  status    AttendanceStatus @default(PRESENT)
+  checkedAt DateTime         @default(now()) @map("checked_at") @db.Timestamptz()
+  ipAddress String?          @map("ip_address") @db.VarChar(64)
+  remark    String?          @db.VarChar(255)
+
+  session ClassroomSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  student User             @relation("StudentAttendance", fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, studentId])
+  @@index([tenantId, studentId])
+  @@map("attendance_records")
+}
+
+// ----------------------------------------------------
+// 7. ระบบสลิปเงินเดือน (E-Payroll & Confidential Slips)
+// ----------------------------------------------------
+model PayrollPeriod {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String   @map("tenant_id") @db.Uuid
+  year        Int
+  month       Int
+  isPublished Boolean  @default(false) @map("is_published")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz()
+
+  tenant Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  slips  PayrollSlip[]
+
+  @@unique([tenantId, year, month])
+  @@map("payroll_periods")
+}
+
+model PayrollSlip {
+  id                String    @id @default(uuid()) @db.Uuid
+  tenantId          String    @map("tenant_id") @db.Uuid
+  periodId          String    @map("period_id") @db.Uuid
+  userId            String    @map("user_id") @db.Uuid
+  encryptedPayload  String    @map("encrypted_payload") @db.Text
+  netPayable        Decimal   @map("net_payable") @db.Decimal(12, 2)
+  bankAccountMasked String?   @map("bank_account_masked") @db.VarChar(50)
+  downloadedAt      DateTime? @map("downloaded_at") @db.Timestamptz()
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamptz()
+
+  period PayrollPeriod @relation(fields: [periodId], references: [id], onDelete: Cascade)
+  user   User          @relation("UserPayrollSlips", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([periodId, userId])
+  @@index([tenantId, userId])
+  @@map("payroll_slips")
+}
+

@@ -1,0 +1,321 @@
+import Link from "next/link";
+import { getLocale } from "@/shared/lib/i18n/server";
+import { listPublishedNews } from "@/features/news/server";
+import { listActivePersonnel } from "@/features/personnel/server";
+import { listActiveCurricula } from "@/features/curriculum/server";
+import {
+  ArrowRight,
+  BookOpen,
+  Users,
+  GraduationCap,
+  Calendar,
+  Sparkles,
+  ChevronRight,
+  Clock,
+  Pin,
+  FileCheck2,
+  Building,
+} from "lucide-react";
+
+export default async function PortalHomePage() {
+  const locale = await getLocale();
+  const isTh = locale === "th";
+
+  // Fetch real data from database
+  const [latestNews, keyPersonnel, programs] = await Promise.all([
+    listPublishedNews(undefined, 6).catch(() => []),
+    listActivePersonnel().catch(() => []),
+    listActiveCurricula().catch(() => []),
+  ]);
+
+  return (
+    <div className="space-y-16 pb-20">
+      {/* ─── Hero Banner ─── */}
+      <section className="relative overflow-hidden border-b border-border/40 bg-gradient-to-b from-brand/5 via-background to-background py-20 md:py-28">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="max-w-3xl space-y-6">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-brand/10 border border-brand/20 text-brand text-xs font-semibold">
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>{isTh ? "ยินดีต้อนรับสู่คณะวิทยาการจัดการ" : "Welcome to Faculty of Management Science"}</span>
+            </div>
+
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-foreground leading-[1.15]">
+              {isTh ? (
+                <>
+                  สร้างสรรค์ผู้นำยุคใหม่ <br />
+                  <span className="text-brand">ขับเคลื่อนนวัตกรรมและสังคม</span>
+                </>
+              ) : (
+                <>
+                  Empowering Future Leaders <br />
+                  <span className="text-brand">Driving Global Innovation</span>
+                </>
+              )}
+            </h1>
+
+            <p className="text-base sm:text-lg text-muted-foreground leading-relaxed max-w-2xl">
+              {isTh
+                ? "ศูนย์กลางการเรียนรู้ระดับสากล บูรณาการศาสตร์การบริหารธุรกิจ การบัญชี เทคโนโลยี และเศรษฐศาสตร์ เพื่อความเป็นเลิศในระดับสากล"
+                : "A premier institution integrating business administration, accounting, technology, and economics for sustainable future impact."}
+            </p>
+
+            <div className="flex flex-wrap items-center gap-3 pt-2">
+              <Link
+                href="/portal/curriculum"
+                className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-brand text-on-brand font-semibold text-sm shadow-md hover:bg-brand/90 transition-all hover:scale-[1.02]"
+              >
+                <BookOpen className="w-4 h-4" />
+                <span>{isTh ? "ค้นหาหลักสูตรการศึกษา" : "Explore Programs"}</span>
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+
+              <Link
+                href="/portal/news"
+                className="inline-flex items-center gap-2 px-5 py-3 rounded-xl border border-border bg-background hover:bg-muted font-medium text-sm transition-all"
+              >
+                <span>{isTh ? "ข่าวและกิจกรรมล่าสุด" : "Latest Updates"}</span>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── Quick Stats ─── */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
+          <div className="p-6 rounded-2xl border border-border/60 bg-muted/20 space-y-2">
+            <div className="flex items-center gap-2 text-brand">
+              <BookOpen className="w-5 h-5" />
+              <span className="text-xs font-semibold uppercase tracking-wider">{isTh ? "หลักสูตร" : "Curricula"}</span>
+            </div>
+            <div className="text-3xl font-extrabold text-foreground">{programs.length || "12+"}</div>
+            <p className="text-xs text-muted-foreground">{isTh ? "ตรี โท เอก และวิชาชีพ" : "Degree & Certificate tracks"}</p>
+          </div>
+
+          <div className="p-6 rounded-2xl border border-border/60 bg-muted/20 space-y-2">
+            <div className="flex items-center gap-2 text-brand">
+              <Users className="w-5 h-5" />
+              <span className="text-xs font-semibold uppercase tracking-wider">{isTh ? "คณาจารย์" : "Faculty"}</span>
+            </div>
+            <div className="text-3xl font-extrabold text-foreground">{keyPersonnel.length || "45+"}</div>
+            <p className="text-xs text-muted-foreground">{isTh ? "ผู้ทรงคุณวุฒิและเชี่ยวชาญ" : "Professors & Specialists"}</p>
+          </div>
+
+          <div className="p-6 rounded-2xl border border-border/60 bg-muted/20 space-y-2">
+            <div className="flex items-center gap-2 text-brand">
+              <GraduationCap className="w-5 h-5" />
+              <span className="text-xs font-semibold uppercase tracking-wider">{isTh ? "นิสิตนักศึกษา" : "Students"}</span>
+            </div>
+            <div className="text-3xl font-extrabold text-foreground">1,800+</div>
+            <p className="text-xs text-muted-foreground">{isTh ? "ในระดับปริญญาตรีและบัณฑิตศึกษา" : "Active learners enrolled"}</p>
+          </div>
+
+          <div className="p-6 rounded-2xl border border-border/60 bg-muted/20 space-y-2">
+            <div className="flex items-center gap-2 text-brand">
+              <Building className="w-5 h-5" />
+              <span className="text-xs font-semibold uppercase tracking-wider">{isTh ? "ห้องและบริการ" : "Facilities"}</span>
+            </div>
+            <div className="text-3xl font-extrabold text-foreground">24/7</div>
+            <p className="text-xs text-muted-foreground">{isTh ? "ระบบจองและบริการอัจฉริยะ" : "Smart online reservation"}</p>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── Latest News Section ─── */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-border/40 pb-4">
+          <div>
+            <h2 className="text-2xl font-bold text-foreground">
+              {isTh ? "ข่าวประชาสัมพันธ์และกิจกรรม" : "News & Faculty Highlights"}
+            </h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              {isTh ? "ติดตามข่าวสาร การรับสมัคร และประกาศสำคัญล่าสุด" : "Stay informed with official updates and academic events"}
+            </p>
+          </div>
+          <Link
+            href="/portal/news"
+            className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand hover:underline"
+          >
+            <span>{isTh ? "ดูข่าวทั้งหมด" : "View All News"}</span>
+            <ChevronRight className="w-4 h-4" />
+          </Link>
+        </div>
+
+        {latestNews.length === 0 ? (
+          <div className="p-12 text-center rounded-2xl border border-dashed border-border text-muted-foreground">
+            <Clock className="w-8 h-8 mx-auto mb-2 opacity-50" />
+            <p className="text-sm">{isTh ? "ยังไม่มีข่าวสารที่เผยแพร่ในขณะนี้" : "No published news articles found"}</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {latestNews.slice(0, 3).map((item) => (
+              <Link
+                key={item.id}
+                href={`/portal/news/${item.slug}`}
+                className="group flex flex-col rounded-2xl border border-border/60 bg-card overflow-hidden hover:shadow-lg transition-all hover:-translate-y-1"
+              >
+                <div className="aspect-video bg-muted relative flex items-center justify-center overflow-hidden">
+                  {item.coverImageUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={item.coverImageUrl}
+                      alt={isTh ? item.titleTh : item.titleEn}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center gap-1 text-muted-foreground">
+                      <BookOpen className="w-8 h-8 opacity-40" />
+                      <span className="text-xs uppercase font-medium tracking-wider">{item.category}</span>
+                    </div>
+                  )}
+
+                  {item.isPinned && (
+                    <div className="absolute top-3 left-3 px-2 py-1 rounded-md bg-brand text-on-brand text-xs font-semibold flex items-center gap-1 shadow-sm">
+                      <Pin className="w-3 h-3" />
+                      <span>{isTh ? "ข่าวเด่น" : "Pinned"}</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="p-5 flex-1 flex flex-col justify-between space-y-3">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <span className="px-2 py-0.5 rounded-full bg-muted font-medium">
+                        {item.category}
+                      </span>
+                      <span>•</span>
+                      <span>{item.publishedAt ? new Date(item.publishedAt).toLocaleDateString(isTh ? "th-TH" : "en-US") : ""}</span>
+                    </div>
+                    <h3 className="font-bold text-foreground text-base line-clamp-2 group-hover:text-brand transition-colors">
+                      {isTh ? item.titleTh : item.titleEn}
+                    </h3>
+                    <p className="text-xs text-muted-foreground line-clamp-2">
+                      {isTh ? item.summaryTh || item.contentTh : item.summaryEn || item.contentEn}
+                    </p>
+                  </div>
+
+                  <div className="pt-2 flex items-center gap-1 text-xs font-semibold text-brand">
+                    <span>{isTh ? "อ่านรายละเอียด" : "Read more"}</span>
+                    <ArrowRight className="w-3 h-3" />
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* ─── Academic Programs Preview ─── */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-border/40 pb-4">
+          <div>
+            <h2 className="text-2xl font-bold text-foreground">
+              {isTh ? "หลักสูตรที่เปิดสอน" : "Featured Academic Programs"}
+            </h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              {isTh ? "หลักสูตรทันสมัย ออกแบบเพื่อตอบโจทย์ตลาดงานสากล" : "Modern curricula tailored for global career excellence"}
+            </p>
+          </div>
+          <Link
+            href="/portal/curriculum"
+            className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand hover:underline"
+          >
+            <span>{isTh ? "ดูหลักสูตรทั้งหมด" : "All Programs"}</span>
+            <ChevronRight className="w-4 h-4" />
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {programs.slice(0, 3).map((prog) => (
+            <div
+              key={prog.id}
+              className="p-6 rounded-2xl border border-border/60 bg-card hover:border-brand/40 transition-all space-y-4 flex flex-col justify-between"
+            >
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-brand/10 text-brand">
+                    {prog.degreeLevel}
+                  </span>
+                  <span className="text-xs text-muted-foreground font-mono">{prog.code}</span>
+                </div>
+                <h3 className="font-bold text-lg text-foreground">
+                  {isTh ? prog.nameTh : prog.nameEn}
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  {isTh ? prog.degreeTh : prog.degreeEn}
+                </p>
+              </div>
+
+              <div className="pt-4 border-t border-border/40 flex items-center justify-between text-xs">
+                <span className="text-muted-foreground">{prog.totalCredits} {isTh ? "หน่วยกิต" : "Credits"}</span>
+                <Link
+                  href="/portal/curriculum"
+                  className="font-semibold text-brand hover:underline"
+                >
+                  {isTh ? "รายละเอียดหลักสูตร →" : "Learn more →"}
+                </Link>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ─── Online Services Hub ─── */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="rounded-3xl border border-brand/20 bg-gradient-to-r from-brand/10 via-brand/5 to-transparent p-8 sm:p-12">
+          <div className="max-w-3xl space-y-6">
+            <h2 className="text-2xl sm:text-3xl font-bold text-foreground">
+              {isTh ? "ศูนย์บริการสารสนเทศออนไลน์ (Online Services)" : "Faculty Smart Online Services"}
+            </h2>
+            <p className="text-sm sm:text-base text-muted-foreground">
+              {isTh
+                ? "เข้าถึงระบบบริการออนไลน์สำหรับอาจารย์ บุคลากร และนักศึกษา อาทิ ระบบเช็คชื่อเข้าเรียน ระบบจองห้องประชุม และระบบสลิปเงินเดือน"
+                : "Access smart academic & operational services including classroom attendance check-in, room booking, and e-payroll."}
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+              <Link
+                href="/portal/facilities"
+                className="p-4 rounded-xl bg-background border border-border/60 hover:border-brand shadow-xs hover:shadow-md transition-all flex items-center gap-3"
+              >
+                <div className="w-10 h-10 rounded-lg bg-brand/10 text-brand flex items-center justify-center shrink-0">
+                  <Calendar className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-sm text-foreground">{isTh ? "จองห้อง & ยานพาหนะ" : "Facility Booking"}</h4>
+                  <p className="text-xs text-muted-foreground">{isTh ? "ดูปฏิทินและสถานะ" : "Check schedule"}</p>
+                </div>
+              </Link>
+
+              <Link
+                href="/login"
+                className="p-4 rounded-xl bg-background border border-border/60 hover:border-brand shadow-xs hover:shadow-md transition-all flex items-center gap-3"
+              >
+                <div className="w-10 h-10 rounded-lg bg-brand/10 text-brand flex items-center justify-center shrink-0">
+                  <FileCheck2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-sm text-foreground">{isTh ? "เช็คชื่อเข้าเรียน" : "Smart Attendance"}</h4>
+                  <p className="text-xs text-muted-foreground">{isTh ? "สแกน QR Code" : "QR Classroom Scan"}</p>
+                </div>
+              </Link>
+
+              <Link
+                href="/login"
+                className="p-4 rounded-xl bg-background border border-border/60 hover:border-brand shadow-xs hover:shadow-md transition-all flex items-center gap-3"
+              >
+                <div className="w-10 h-10 rounded-lg bg-brand/10 text-brand flex items-center justify-center shrink-0">
+                  <Users className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-sm text-foreground">{isTh ? "ระบบสลิปเงินเดือน" : "E-Payroll Slips"}</h4>
+                  <p className="text-xs text-muted-foreground">{isTh ? "สำหรับบุคลากร" : "Staff login required"}</p>
+                </div>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}

@@ -1,6 +1,26 @@
-import { LayoutDashboard, Users, Settings, Layers, type LucideIcon } from "lucide-react";
+import {
+  LayoutDashboard,
+  Users,
+  Settings,
+  Newspaper,
+  UserCheck,
+  GraduationCap,
+  Globe,
+  FileCheck,
+  CalendarDays,
+  QrCode,
+  Coins,
+  Wallet,
+  type LucideIcon,
+} from "lucide-react";
 import { hasPermission, P } from "@/features/identity";
-import { SAMPLE_P } from "@/features/sample";
+import { NEWS_P } from "@/features/news";
+import { PERSONNEL_P } from "@/features/personnel";
+import { CURRICULUM_P } from "@/features/curriculum";
+import { EDOCUMENT_P } from "@/features/e-document";
+import { BOOKING_P } from "@/features/booking";
+import { ATTENDANCE_P } from "@/features/attendance";
+import { PAYROLL_P } from "@/features/payroll";
 
 export interface NavItem {
   /** i18n key */
@@ -15,22 +35,42 @@ export interface NavGroup { label: string; items: NavItem[] }
 export interface NavCrumb { title: string; href: string }
 
 export const sidebarGroups: NavGroup[] = [
-  { label: "nav.group.overview", items: [{ title: "nav.dashboard", href: "/dashboard", icon: LayoutDashboard }] },
   {
-    label: "nav.group.sample",
-    items: [{ title: "sample.nav", href: "/sample", icon: Layers, permission: SAMPLE_P.sampleRead }],
+    label: "nav.group.overview",
+    items: [
+      { title: "nav.dashboard", href: "/dashboard", icon: LayoutDashboard },
+      { title: "หน้าเว็บไซต์คณะ (Portal)", href: "/portal", icon: Globe },
+    ],
   },
   {
-    label: "nav.group.users",
-    items: [{
-      title: "nav.users", href: "/users", icon: Users, permission: P.usersRead,
-      children: [
-        { title: "nav.users", href: "/users", permission: P.usersRead },
-        { title: "nav.roles", href: "/users/roles", permission: P.rolesManage },
-      ],
-    }],
+    label: "ระบบบริหารคณะวิทยาการจัดการ",
+    items: [
+      { title: "news.nav", href: "/news", icon: Newspaper, permission: NEWS_P.newsRead },
+      { title: "personnel.nav", href: "/personnel", icon: UserCheck, permission: PERSONNEL_P.personnelRead },
+      { title: "curriculum.nav", href: "/curriculum", icon: GraduationCap, permission: CURRICULUM_P.curriculumRead },
+      { title: "document.nav", href: "/documents", icon: FileCheck, permission: EDOCUMENT_P.documentRead },
+      { title: "booking.nav", href: "/booking", icon: CalendarDays, permission: BOOKING_P.bookingRead },
+      { title: "attendance.nav", href: "/attendance", icon: QrCode, permission: ATTENDANCE_P.attendanceTeach },
+      { title: "payroll.myNav", href: "/me/payroll", icon: Coins, permission: PAYROLL_P.payrollViewOwn },
+      { title: "payroll.nav", href: "/payroll", icon: Wallet, permission: PAYROLL_P.payrollManage },
+    ],
   },
-  { label: "nav.group.settings", items: [{ title: "nav.settings", href: "/settings", icon: Settings, permission: P.settingsManage }] },
+  {
+    label: "nav.group.settings",
+    items: [
+      {
+        title: "nav.users",
+        href: "/users",
+        icon: Users,
+        permission: P.usersRead,
+        children: [
+          { title: "nav.users", href: "/users", permission: P.usersRead },
+          { title: "nav.roles", href: "/users/roles", permission: P.rolesManage },
+        ],
+      },
+      { title: "nav.settings", href: "/settings", icon: Settings, permission: P.settingsManage },
+    ],
+  },
 ];
 
 type Ctx = Parameters<typeof hasPermission>[0];
