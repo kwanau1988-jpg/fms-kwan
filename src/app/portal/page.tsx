@@ -9,15 +9,13 @@ import {
   ArrowRight,
   BookOpen,
   Users,
-  GraduationCap,
   Calendar,
-  Sparkles,
   ChevronRight,
   Clock,
   Pin,
   FileCheck2,
-  Building,
 } from "lucide-react";
+import { PortalHero } from "./_components/portal-hero";
 
 export const metadata: Metadata = {
   title: "คณะวิทยาการจัดการ | Faculty of Management Science",
@@ -37,85 +35,13 @@ export default async function PortalHomePage() {
 
   return (
     <div className="space-y-16 pb-20">
-      {/* ─── Hero Banner ─── */}
-      <section className="relative overflow-hidden border-b border-border/40 bg-gradient-to-b from-brand/5 via-background to-background py-20 md:py-28">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="max-w-3xl space-y-6">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-brand/10 border border-brand/20 text-brand text-xs font-semibold">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>{t("portal.hero.badge")}</span>
-            </div>
-
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-foreground leading-[1.15]">
-              {t("portal.hero.title1")} <br />
-              <span className="text-brand">{t("portal.hero.title2")}</span>
-            </h1>
-
-            <p className="text-base sm:text-lg text-muted-foreground leading-relaxed max-w-2xl">
-              {t("portal.hero.desc")}
-            </p>
-
-            <div className="flex flex-wrap items-center gap-3 pt-2">
-              <Link
-                href="/portal/curriculum"
-                className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-brand text-on-brand font-semibold text-sm shadow-md hover:bg-brand/90 transition-all hover:scale-[1.02]"
-              >
-                <BookOpen className="w-4 h-4" />
-                <span>{t("portal.hero.explore")}</span>
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-
-              <Link
-                href="/portal/news"
-                className="inline-flex items-center gap-2 px-5 py-3 rounded-xl border border-border bg-background hover:bg-muted font-medium text-sm transition-all"
-              >
-                <span>{t("portal.hero.latestNews")}</span>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ─── Quick Stats ─── */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
-          <div className="p-6 rounded-2xl border border-border/60 bg-muted/20 space-y-2">
-            <div className="flex items-center gap-2 text-brand">
-              <BookOpen className="w-5 h-5" />
-              <span className="text-xs font-semibold uppercase tracking-wider">{t("portal.stats.curricula")}</span>
-            </div>
-            <div className="text-3xl font-extrabold text-foreground">{programs.length || "12+"}</div>
-            <p className="text-xs text-muted-foreground">{t("portal.stats.curriculaDesc")}</p>
-          </div>
-
-          <div className="p-6 rounded-2xl border border-border/60 bg-muted/20 space-y-2">
-            <div className="flex items-center gap-2 text-brand">
-              <Users className="w-5 h-5" />
-              <span className="text-xs font-semibold uppercase tracking-wider">{t("portal.stats.faculty")}</span>
-            </div>
-            <div className="text-3xl font-extrabold text-foreground">{keyPersonnel.length || "45+"}</div>
-            <p className="text-xs text-muted-foreground">{t("portal.stats.facultyDesc")}</p>
-          </div>
-
-          <div className="p-6 rounded-2xl border border-border/60 bg-muted/20 space-y-2">
-            <div className="flex items-center gap-2 text-brand">
-              <GraduationCap className="w-5 h-5" />
-              <span className="text-xs font-semibold uppercase tracking-wider">{t("roles.module.attendance")}</span>
-            </div>
-            <div className="text-3xl font-extrabold text-foreground">1,800+</div>
-            <p className="text-xs text-muted-foreground">{t("portal.stats.attendanceDesc")}</p>
-          </div>
-
-          <div className="p-6 rounded-2xl border border-border/60 bg-muted/20 space-y-2">
-            <div className="flex items-center gap-2 text-brand">
-              <Building className="w-5 h-5" />
-              <span className="text-xs font-semibold uppercase tracking-wider">{t("portal.stats.facilities")}</span>
-            </div>
-            <div className="text-3xl font-extrabold text-foreground">24/7</div>
-            <p className="text-xs text-muted-foreground">{t("portal.stats.facilitiesDesc")}</p>
-          </div>
-        </div>
-      </section>
+      {/* ─── Hero Section (Monotree Style) ─── */}
+      <PortalHero
+        t={t}
+        isTh={isTh}
+        curriculaCount={programs.length}
+        personnelCount={keyPersonnel.length}
+      />
 
       {/* ─── Latest News Section ─── */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
