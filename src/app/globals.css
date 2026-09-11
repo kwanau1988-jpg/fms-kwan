@@ -75,6 +75,42 @@
   100% { transform: translateX(-50%); }
 }
 
+@keyframes float-card-1 {
+  0%, 100% { transform: translate3d(0, 0, 45px) rotateX(14deg) rotateY(-20deg) rotateZ(3.5deg); }
+  50% { transform: translate3d(0, -16px, 60px) rotateX(11deg) rotateY(-18deg) rotateZ(4.5deg); }
+}
+
+@keyframes float-card-2 {
+  0%, 100% { transform: translate3d(32px, 24px, 20px) rotateX(14deg) rotateY(-20deg) rotateZ(3.5deg); }
+  50% { transform: translate3d(32px, 12px, 32px) rotateX(16deg) rotateY(-22deg) rotateZ(3deg); }
+}
+
+@keyframes float-card-3 {
+  0%, 100% { transform: translate3d(64px, 48px, -5px) rotateX(14deg) rotateY(-20deg) rotateZ(3.5deg); }
+  50% { transform: translate3d(64px, 38px, 6px) rotateX(13deg) rotateY(-19deg) rotateZ(4deg); }
+}
+
+@keyframes float-card-4 {
+  0%, 100% { transform: translate3d(96px, 72px, -30px) rotateX(14deg) rotateY(-20deg) rotateZ(3.5deg); }
+  50% { transform: translate3d(96px, 64px, -20px) rotateX(15deg) rotateY(-21deg) rotateZ(3.5deg); }
+}
+
+@keyframes sheen-sweep {
+  0%, 15% { transform: translateX(-160%) skewX(-25deg); opacity: 0; }
+  25% { opacity: 0.6; }
+  60%, 100% { transform: translateX(260%) skewX(-25deg); opacity: 0; }
+}
+
+@keyframes glow-pulse {
+  0%, 100% { opacity: 0.45; transform: scale(1); }
+  50% { opacity: 0.75; transform: scale(1.08); }
+}
+
+@keyframes float-badge {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-7px); }
+}
+
 @layer utilities {
   .animate-marquee {
     display: flex;
@@ -84,4 +120,32 @@
   .animate-marquee:hover {
     animation-play-state: paused;
   }
+  .preserve-3d {
+    transform-style: preserve-3d;
+  }
+  .perspective-1200 {
+    perspective: 1200px;
+  }
+  .animate-card-1 {
+    animation: float-card-1 6s ease-in-out infinite;
+  }
+  .animate-card-2 {
+    animation: float-card-2 6.8s ease-in-out infinite 0.4s;
+  }
+  .animate-card-3 {
+    animation: float-card-3 7.4s ease-in-out infinite 0.8s;
+  }
+  .animate-card-4 {
+    animation: float-card-4 8s ease-in-out infinite 1.2s;
+  }
+  .animate-sheen {
+    animation: sheen-sweep 4.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  }
+  .animate-glow-pulse {
+    animation: glow-pulse 5s ease-in-out infinite;
+  }
+  .animate-float-badge {
+    animation: float-badge 4s ease-in-out infinite;
+  }
 }
+
