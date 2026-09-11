@@ -58,6 +58,9 @@ export function SettingsForm({ initial }: { initial: TenantSettings }) {
       setForm((prev) => ({ ...prev, logoUrl: newLogoUrl }));
       // Auto-save logo immediately into tenant settings
       const saveRes = await updateSettingsAction({ ...form, logoUrl: newLogoUrl });
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("tenant-branding-updated"));
+      }
       if (saveRes.ok) {
         toast.success(t("settings.logoUploadSuccess"));
         router.refresh();
@@ -76,6 +79,9 @@ export function SettingsForm({ initial }: { initial: TenantSettings }) {
     setForm((prev) => ({ ...prev, logoUrl: "" }));
     try {
       await updateSettingsAction({ ...form, logoUrl: "" });
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("tenant-branding-updated"));
+      }
       toast.success(t("settings.saveOk"));
       router.refresh();
     } catch {
@@ -124,6 +130,9 @@ export function SettingsForm({ initial }: { initial: TenantSettings }) {
         return;
       }
       setErrors({});
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("tenant-branding-updated"));
+      }
       toast.success(t("settings.saveOk"));
       router.refresh();
     });

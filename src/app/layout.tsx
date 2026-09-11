@@ -10,13 +10,20 @@ import { UI_MESSAGES } from "@/i18n";
 import { getLocaleCookie } from "@/shared/lib/i18n/server";
 import { DEFAULT_LOCALE } from "@/shared/lib/i18n/config";
 import { auth, resolvePalette } from "@/features/identity/server";
+import { prisma } from "@/shared/lib/infra/prisma";
 
 const inter = Inter({ variable: "--font-inter", subsets: ["latin", "latin-ext"] });
 const sarabun = Sarabun({ variable: "--font-sarabun", subsets: ["thai", "latin"], weight: ["300", "400", "500", "600", "700", "800"], display: "swap" });
 
 export async function generateMetadata(): Promise<Metadata> {
-  const t = await getT();
-  return { title: t("app.name"), description: t("app.tagline") };
+  const [t, locale, tenant] = await Promise.all([
+    getT(),
+    getLocaleCookie(),
+    prisma.tenant.findFirst({ orderBy: { createdAt: "asc" }, select: { nameTh: true, nameEn: true } }).catch(() => null),
+  ]);
+  const isEn = locale === "en";
+  const title = (isEn ? (tenant?.nameEn || tenant?.nameTh) : (tenant?.nameTh || tenant?.nameEn)) || t("app.name");
+  return { title, description: t("app.tagline") };
 }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {

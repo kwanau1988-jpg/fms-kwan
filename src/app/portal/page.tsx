@@ -16,15 +16,30 @@ import {
   FileCheck2,
 } from "lucide-react";
 import { PortalHero } from "./_components/portal-hero";
+import { prisma } from "@/shared/lib/infra/prisma";
 
-export const metadata: Metadata = {
-  title: "คณะวิทยาการจัดการ | Faculty of Management Science",
-  description: "Faculty Web Platform - ศูนย์กลางการเรียนรู้และการบริหารจัดการ คณะวิทยาการจัดการ",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const [tenant, locale] = await Promise.all([
+    prisma.tenant.findFirst({ orderBy: { createdAt: "asc" }, select: { nameTh: true, nameEn: true } }).catch(() => null),
+    getLocale(),
+  ]);
+  const isTh = locale === "th";
+  const name = (isTh ? tenant?.nameTh : tenant?.nameEn) || tenant?.nameTh || "คณะวิทยาการจัดการ";
+  const nameAlt = (isTh ? tenant?.nameEn : tenant?.nameTh) || "Faculty of Management Science";
+  return {
+    title: `${name} | ${nameAlt}`,
+    description: `${name} Web Platform - ศูนย์กลางการเรียนรู้และการบริหารจัดการ`,
+  };
+}
 
 export default async function PortalHomePage() {
-  const [t, locale] = await Promise.all([getT(), getLocale()]);
+  const [t, locale, tenant] = await Promise.all([
+    getT(),
+    getLocale(),
+    prisma.tenant.findFirst({ orderBy: { createdAt: "asc" }, select: { nameTh: true, nameEn: true } }).catch(() => null),
+  ]);
   const isTh = locale === "th";
+  const orgName = (locale === "en" ? (tenant?.nameEn || tenant?.nameTh) : (tenant?.nameTh || tenant?.nameEn)) || (isTh ? "คณะวิทยาการจัดการ" : "Faculty of Management Science");
 
   // Fetch real data from database
   const [latestNews, keyPersonnel, programs] = await Promise.all([
@@ -39,6 +54,7 @@ export default async function PortalHomePage() {
       <PortalHero
         t={t}
         isTh={isTh}
+        orgName={orgName}
         curriculaCount={programs.length}
         personnelCount={keyPersonnel.length}
       />

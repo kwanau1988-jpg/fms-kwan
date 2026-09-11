@@ -25,21 +25,32 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [prev, setPrev] = useState(pathname);
   const [mounted, setMounted] = useState(false);
   const [brandLogoUrl, setBrandLogoUrl] = useState<string | null>(null);
+  const [branding, setBranding] = useState<{ logoUrl: string | null; nameTh: string; nameEn: string } | null>(null);
   if (pathname !== prev) { setPrev(pathname); setDrawerOpen(false); }
 
   useEffect(() => { setMounted(true); }, []); // eslint-disable-line react-hooks/set-state-in-effect
 
   useEffect(() => {
-    getTenantBrandingAction().then((res) => {
-      if (res.ok) {
-        setBrandLogoUrl(res.data.logoUrl ?? null);
-      }
-    });
+    function fetchBranding() {
+      getTenantBrandingAction().then((res) => {
+        if (res.ok) {
+          setBranding(res.data);
+          setBrandLogoUrl(res.data.logoUrl ?? null);
+        }
+      });
+    }
+    fetchBranding();
+    window.addEventListener("tenant-branding-updated", fetchBranding);
+    return () => window.removeEventListener("tenant-branding-updated", fetchBranding);
   }, [pathname]);
 
   if (!mounted || status === "loading") {
     return <div className="flex h-screen items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>;
   }
+
+  const brandName = locale === "en"
+    ? (branding?.nameEn || branding?.nameTh || t("app.name"))
+    : (branding?.nameTh || branding?.nameEn || t("app.name"));
 
   const initials = (user?.name ?? "?").trim().charAt(0).toUpperCase() || "?";
   const chain = getActiveNavChain(pathname);
@@ -52,7 +63,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <AdminShell
-      brandName={t("app.name")} brandTagline={t("app.tagline")} brandHref="/dashboard"
+      brandName={brandName} brandTagline={t("app.tagline")} brandHref="/dashboard"
       brandLogoUrl={brandLogoUrl}
       breadcrumb={breadcrumb} breadcrumbLabel={t("common.breadcrumb")}
       roleLabel={roles[0] ? localizedName(roles[0], locale) : null}

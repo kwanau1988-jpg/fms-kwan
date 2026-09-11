@@ -15,9 +15,10 @@ interface PortalHeroProps {
   isTh: boolean;
   curriculaCount: number;
   personnelCount: number;
+  orgName?: string;
 }
 
-export function PortalHero({ t, isTh }: PortalHeroProps) {
+export function PortalHero({ t, isTh, orgName }: PortalHeroProps) {
   // Academic & Industry Partners for the infinite marquee
   const partners = [
     { name: "AACSB Alliance", tag: "Global Business Education", abbr: "AACSB" },
@@ -60,7 +61,7 @@ export function PortalHero({ t, isTh }: PortalHeroProps) {
             {/* Eyebrow Pill Badge with live radar pulse */}
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-brand/10 border border-brand/20 text-brand text-xs font-semibold shadow-xs">
               <Sparkles className="w-3.5 h-3.5 text-brand animate-pulse" />
-              <span>{t("portal.hero.badge")}</span>
+              <span>{orgName ? `${isTh ? "✨ ยินดีต้อนรับสู่" : "✨ Welcome to"} ${orgName}` : t("portal.hero.badge")}</span>
             </div>
 
             {/* Signature Hybrid Serif/Sans Headline (Dribbble 25401411 Concept) */}
@@ -70,7 +71,7 @@ export function PortalHero({ t, isTh }: PortalHeroProps) {
                   {t("portal.hero.hybrid.line1_italic")}
                 </span>
                 <span className="font-black tracking-tight uppercase text-foreground">
-                  {t("portal.hero.hybrid.line1_bold")}
+                  {orgName || t("portal.hero.hybrid.line1_bold")}
                 </span>
               </span>
 

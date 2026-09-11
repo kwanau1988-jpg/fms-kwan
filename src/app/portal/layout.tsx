@@ -12,17 +12,18 @@ export default async function PortalLayout({ children }: { children: React.React
     auth().catch(() => null),
     getT(),
     getLocale(),
-    prisma.tenant.findFirst({ orderBy: { createdAt: "asc" }, select: { logoUrl: true } }).catch(() => null),
+    prisma.tenant.findFirst({ orderBy: { createdAt: "asc" }, select: { logoUrl: true, nameTh: true, nameEn: true } }).catch(() => null),
   ]);
 
   const roleLabel = session?.roles?.[0] ? localizedName(session.roles[0], locale) : null;
+  const orgName = (locale === "en" ? (tenant?.nameEn || tenant?.nameTh) : (tenant?.nameTh || tenant?.nameEn)) || t("portal.facultyName");
 
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
       {/* Top Bar - Liyon Admin Styled Portal Navbar */}
       <PortalNavbar
         tenantLogoUrl={tenant?.logoUrl}
-        facultyName={t("portal.facultyName")}
+        facultyName={orgName}
         tagline={t("portal.tagline")}
         sessionUser={session?.user}
         roleLabel={roleLabel}
@@ -72,7 +73,7 @@ export default async function PortalLayout({ children }: { children: React.React
                 </div>
                 <div className="flex flex-col">
                   <span className="font-bold text-base leading-tight tracking-tight text-[var(--ink-band-text)]">
-                    {t("portal.facultyName")}
+                    {orgName}
                   </span>
                   <span className="text-xs text-[var(--ink-band-muted)]">
                     {t("portal.tagline")}
@@ -209,7 +210,7 @@ export default async function PortalLayout({ children }: { children: React.React
           {/* Bottom Bar: Copyright & Compliance */}
           <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[var(--ink-band-muted)]">
             <div className="flex items-center gap-2 text-center sm:text-left">
-              <span>© {new Date().getFullYear()} {t("portal.facultyName")}. {t("portal.footer.rights")}</span>
+              <span>© {new Date().getFullYear()} {orgName}. {t("portal.footer.rights")}</span>
             </div>
 
             <div className="flex items-center gap-4 flex-wrap justify-center">
