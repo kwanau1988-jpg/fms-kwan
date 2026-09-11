@@ -26,3 +26,9 @@ export function localizedName(entity: Bilingual, locale: Locale): string {
 export function academicYearLabel(yearBE: number, locale: Locale): string {
   return locale === "th" ? `ปีการศึกษา ${yearBE}` : `AY ${yearBE - 543}`;
 }
+
+/** แปลง Date เป็นสตริงสำหรับ HTML <input type="datetime-local"> เช่น "2026-09-15T09:00" */
+export function toDateTimeLocalValue(d: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}

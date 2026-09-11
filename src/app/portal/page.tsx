@@ -1,5 +1,7 @@
 import Link from "next/link";
-import { getLocale } from "@/shared/lib/i18n/server";
+import type { Metadata } from "next";
+import { getLocale, getT } from "@/i18n/server";
+import { formatDate } from "@/shared/lib/format";
 import { listPublishedNews } from "@/features/news/server";
 import { listActivePersonnel } from "@/features/personnel/server";
 import { listActiveCurricula } from "@/features/curriculum/server";
@@ -17,8 +19,13 @@ import {
   Building,
 } from "lucide-react";
 
+export const metadata: Metadata = {
+  title: "คณะวิทยาการจัดการ | Faculty of Management Science",
+  description: "Faculty Web Platform - ศูนย์กลางการเรียนรู้และการบริหารจัดการ คณะวิทยาการจัดการ",
+};
+
 export default async function PortalHomePage() {
-  const locale = await getLocale();
+  const [t, locale] = await Promise.all([getT(), getLocale()]);
   const isTh = locale === "th";
 
   // Fetch real data from database
@@ -36,27 +43,16 @@ export default async function PortalHomePage() {
           <div className="max-w-3xl space-y-6">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-brand/10 border border-brand/20 text-brand text-xs font-semibold">
               <Sparkles className="w-3.5 h-3.5" />
-              <span>{isTh ? "ยินดีต้อนรับสู่คณะวิทยาการจัดการ" : "Welcome to Faculty of Management Science"}</span>
+              <span>{t("portal.hero.badge")}</span>
             </div>
 
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-foreground leading-[1.15]">
-              {isTh ? (
-                <>
-                  สร้างสรรค์ผู้นำยุคใหม่ <br />
-                  <span className="text-brand">ขับเคลื่อนนวัตกรรมและสังคม</span>
-                </>
-              ) : (
-                <>
-                  Empowering Future Leaders <br />
-                  <span className="text-brand">Driving Global Innovation</span>
-                </>
-              )}
+              {t("portal.hero.title1")} <br />
+              <span className="text-brand">{t("portal.hero.title2")}</span>
             </h1>
 
             <p className="text-base sm:text-lg text-muted-foreground leading-relaxed max-w-2xl">
-              {isTh
-                ? "ศูนย์กลางการเรียนรู้ระดับสากล บูรณาการศาสตร์การบริหารธุรกิจ การบัญชี เทคโนโลยี และเศรษฐศาสตร์ เพื่อความเป็นเลิศในระดับสากล"
-                : "A premier institution integrating business administration, accounting, technology, and economics for sustainable future impact."}
+              {t("portal.hero.desc")}
             </p>
 
             <div className="flex flex-wrap items-center gap-3 pt-2">
@@ -65,7 +61,7 @@ export default async function PortalHomePage() {
                 className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-brand text-on-brand font-semibold text-sm shadow-md hover:bg-brand/90 transition-all hover:scale-[1.02]"
               >
                 <BookOpen className="w-4 h-4" />
-                <span>{isTh ? "ค้นหาหลักสูตรการศึกษา" : "Explore Programs"}</span>
+                <span>{t("portal.hero.explore")}</span>
                 <ArrowRight className="w-4 h-4" />
               </Link>
 
@@ -73,7 +69,7 @@ export default async function PortalHomePage() {
                 href="/portal/news"
                 className="inline-flex items-center gap-2 px-5 py-3 rounded-xl border border-border bg-background hover:bg-muted font-medium text-sm transition-all"
               >
-                <span>{isTh ? "ข่าวและกิจกรรมล่าสุด" : "Latest Updates"}</span>
+                <span>{t("portal.hero.latestNews")}</span>
               </Link>
             </div>
           </div>
@@ -86,37 +82,37 @@ export default async function PortalHomePage() {
           <div className="p-6 rounded-2xl border border-border/60 bg-muted/20 space-y-2">
             <div className="flex items-center gap-2 text-brand">
               <BookOpen className="w-5 h-5" />
-              <span className="text-xs font-semibold uppercase tracking-wider">{isTh ? "หลักสูตร" : "Curricula"}</span>
+              <span className="text-xs font-semibold uppercase tracking-wider">{t("portal.stats.curricula")}</span>
             </div>
             <div className="text-3xl font-extrabold text-foreground">{programs.length || "12+"}</div>
-            <p className="text-xs text-muted-foreground">{isTh ? "ตรี โท เอก และวิชาชีพ" : "Degree & Certificate tracks"}</p>
+            <p className="text-xs text-muted-foreground">{t("portal.stats.curriculaDesc")}</p>
           </div>
 
           <div className="p-6 rounded-2xl border border-border/60 bg-muted/20 space-y-2">
             <div className="flex items-center gap-2 text-brand">
               <Users className="w-5 h-5" />
-              <span className="text-xs font-semibold uppercase tracking-wider">{isTh ? "คณาจารย์" : "Faculty"}</span>
+              <span className="text-xs font-semibold uppercase tracking-wider">{t("portal.stats.faculty")}</span>
             </div>
             <div className="text-3xl font-extrabold text-foreground">{keyPersonnel.length || "45+"}</div>
-            <p className="text-xs text-muted-foreground">{isTh ? "ผู้ทรงคุณวุฒิและเชี่ยวชาญ" : "Professors & Specialists"}</p>
+            <p className="text-xs text-muted-foreground">{t("portal.stats.facultyDesc")}</p>
           </div>
 
           <div className="p-6 rounded-2xl border border-border/60 bg-muted/20 space-y-2">
             <div className="flex items-center gap-2 text-brand">
               <GraduationCap className="w-5 h-5" />
-              <span className="text-xs font-semibold uppercase tracking-wider">{isTh ? "นิสิตนักศึกษา" : "Students"}</span>
+              <span className="text-xs font-semibold uppercase tracking-wider">{t("roles.module.attendance")}</span>
             </div>
             <div className="text-3xl font-extrabold text-foreground">1,800+</div>
-            <p className="text-xs text-muted-foreground">{isTh ? "ในระดับปริญญาตรีและบัณฑิตศึกษา" : "Active learners enrolled"}</p>
+            <p className="text-xs text-muted-foreground">{t("portal.stats.attendanceDesc")}</p>
           </div>
 
           <div className="p-6 rounded-2xl border border-border/60 bg-muted/20 space-y-2">
             <div className="flex items-center gap-2 text-brand">
               <Building className="w-5 h-5" />
-              <span className="text-xs font-semibold uppercase tracking-wider">{isTh ? "ห้องและบริการ" : "Facilities"}</span>
+              <span className="text-xs font-semibold uppercase tracking-wider">{t("portal.stats.facilities")}</span>
             </div>
             <div className="text-3xl font-extrabold text-foreground">24/7</div>
-            <p className="text-xs text-muted-foreground">{isTh ? "ระบบจองและบริการอัจฉริยะ" : "Smart online reservation"}</p>
+            <p className="text-xs text-muted-foreground">{t("portal.stats.facilitiesDesc")}</p>
           </div>
         </div>
       </section>
@@ -126,17 +122,17 @@ export default async function PortalHomePage() {
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-border/40 pb-4">
           <div>
             <h2 className="text-2xl font-bold text-foreground">
-              {isTh ? "ข่าวประชาสัมพันธ์และกิจกรรม" : "News & Faculty Highlights"}
+              {t("portal.news.title")}
             </h2>
             <p className="text-sm text-muted-foreground mt-1">
-              {isTh ? "ติดตามข่าวสาร การรับสมัคร และประกาศสำคัญล่าสุด" : "Stay informed with official updates and academic events"}
+              {t("news.subtitle")}
             </p>
           </div>
           <Link
             href="/portal/news"
             className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand hover:underline"
           >
-            <span>{isTh ? "ดูข่าวทั้งหมด" : "View All News"}</span>
+            <span>{t("portal.news.viewAll")}</span>
             <ChevronRight className="w-4 h-4" />
           </Link>
         </div>
@@ -144,7 +140,7 @@ export default async function PortalHomePage() {
         {latestNews.length === 0 ? (
           <div className="p-12 text-center rounded-2xl border border-dashed border-border text-muted-foreground">
             <Clock className="w-8 h-8 mx-auto mb-2 opacity-50" />
-            <p className="text-sm">{isTh ? "ยังไม่มีข่าวสารที่เผยแพร่ในขณะนี้" : "No published news articles found"}</p>
+            <p className="text-sm">{t("news.empty")}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -184,7 +180,7 @@ export default async function PortalHomePage() {
                         {item.category}
                       </span>
                       <span>•</span>
-                      <span>{item.publishedAt ? new Date(item.publishedAt).toLocaleDateString(isTh ? "th-TH" : "en-US") : ""}</span>
+                      <span>{item.publishedAt ? formatDate(item.publishedAt, locale) : ""}</span>
                     </div>
                     <h3 className="font-bold text-foreground text-base line-clamp-2 group-hover:text-brand transition-colors">
                       {isTh ? item.titleTh : item.titleEn}
@@ -210,17 +206,17 @@ export default async function PortalHomePage() {
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-border/40 pb-4">
           <div>
             <h2 className="text-2xl font-bold text-foreground">
-              {isTh ? "หลักสูตรที่เปิดสอน" : "Featured Academic Programs"}
+              {t("portal.curriculum.title")}
             </h2>
             <p className="text-sm text-muted-foreground mt-1">
-              {isTh ? "หลักสูตรทันสมัย ออกแบบเพื่อตอบโจทย์ตลาดงานสากล" : "Modern curricula tailored for global career excellence"}
+              {t("curriculum.subtitle")}
             </p>
           </div>
           <Link
             href="/portal/curriculum"
             className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand hover:underline"
           >
-            <span>{isTh ? "ดูหลักสูตรทั้งหมด" : "All Programs"}</span>
+            <span>{t("portal.curriculum.viewAll")}</span>
             <ChevronRight className="w-4 h-4" />
           </Link>
         </div>
@@ -247,7 +243,7 @@ export default async function PortalHomePage() {
               </div>
 
               <div className="pt-4 border-t border-border/40 flex items-center justify-between text-xs">
-                <span className="text-muted-foreground">{prog.totalCredits} {isTh ? "หน่วยกิต" : "Credits"}</span>
+                <span className="text-muted-foreground">{prog.totalCredits} {t("portal.curriculum.credits")}</span>
                 <Link
                   href="/portal/curriculum"
                   className="font-semibold text-brand hover:underline"
@@ -265,7 +261,7 @@ export default async function PortalHomePage() {
         <div className="rounded-3xl border border-brand/20 bg-gradient-to-r from-brand/10 via-brand/5 to-transparent p-8 sm:p-12">
           <div className="max-w-3xl space-y-6">
             <h2 className="text-2xl sm:text-3xl font-bold text-foreground">
-              {isTh ? "ศูนย์บริการสารสนเทศออนไลน์ (Online Services)" : "Faculty Smart Online Services"}
+              {isTh ? "ศูนย์บริการสารสนเทศออนไลน์" : "Faculty Smart Online Services"}
             </h2>
             <p className="text-sm sm:text-base text-muted-foreground">
               {isTh
@@ -282,21 +278,21 @@ export default async function PortalHomePage() {
                   <Calendar className="w-5 h-5" />
                 </div>
                 <div>
-                  <h4 className="font-bold text-sm text-foreground">{isTh ? "จองห้อง & ยานพาหนะ" : "Facility Booking"}</h4>
-                  <p className="text-xs text-muted-foreground">{isTh ? "ดูปฏิทินและสถานะ" : "Check schedule"}</p>
+                  <h4 className="font-bold text-sm text-foreground">{t("portal.nav.facilities")}</h4>
+                  <p className="text-xs text-muted-foreground">{t("booking.subtitle")}</p>
                 </div>
               </Link>
 
               <Link
-                href="/login"
+                href="/portal/attendance/scan"
                 className="p-4 rounded-xl bg-background border border-border/60 hover:border-brand shadow-xs hover:shadow-md transition-all flex items-center gap-3"
               >
                 <div className="w-10 h-10 rounded-lg bg-brand/10 text-brand flex items-center justify-center shrink-0">
                   <FileCheck2 className="w-5 h-5" />
                 </div>
                 <div>
-                  <h4 className="font-bold text-sm text-foreground">{isTh ? "เช็คชื่อเข้าเรียน" : "Smart Attendance"}</h4>
-                  <p className="text-xs text-muted-foreground">{isTh ? "สแกน QR Code" : "QR Classroom Scan"}</p>
+                  <h4 className="font-bold text-sm text-foreground">{t("roles.module.attendance")}</h4>
+                  <p className="text-xs text-muted-foreground">{t("attendance.scanTitle")}</p>
                 </div>
               </Link>
 
@@ -308,8 +304,8 @@ export default async function PortalHomePage() {
                   <Users className="w-5 h-5" />
                 </div>
                 <div>
-                  <h4 className="font-bold text-sm text-foreground">{isTh ? "ระบบสลิปเงินเดือน" : "E-Payroll Slips"}</h4>
-                  <p className="text-xs text-muted-foreground">{isTh ? "สำหรับบุคลากร" : "Staff login required"}</p>
+                  <h4 className="font-bold text-sm text-foreground">{t("roles.module.payroll")}</h4>
+                  <p className="text-xs text-muted-foreground">{t("payroll.mySlips")}</p>
                 </div>
               </Link>
             </div>

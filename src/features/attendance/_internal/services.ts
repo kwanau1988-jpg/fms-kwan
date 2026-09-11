@@ -1,5 +1,6 @@
 import crypto from "crypto";
 import { prisma } from "@/shared/lib/infra/prisma";
+import { errors } from "@/shared/lib/errors";
 import type { CreateSessionInput, CheckInInput, UpdateRecordStatusInput } from "./validations";
 
 export interface AttendanceRecordDto {
@@ -204,15 +205,15 @@ export async function checkInAttendance(
   });
 
   if (!session || !session.isActive) {
-    throw new Error("Classroom session is not currently active");
+    throw errors.validation("attendance.sessionInactive");
   }
 
   if (!session.qrToken || session.qrToken !== input.qrToken.toUpperCase().trim()) {
-    throw new Error("attendance.tokenExpired");
+    throw errors.validation("attendance.tokenExpired");
   }
 
   if (session.qrExpiresAt && session.qrExpiresAt < new Date()) {
-    throw new Error("attendance.tokenExpired");
+    throw errors.validation("attendance.tokenExpired");
   }
 
   const existing = await prisma.attendanceRecord.findFirst({
@@ -223,7 +224,7 @@ export async function checkInAttendance(
   });
 
   if (existing) {
-    throw new Error("attendance.alreadyChecked");
+    throw errors.conflict("attendance.alreadyChecked");
   }
 
   const record = await prisma.attendanceRecord.create({

@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { Plus, Calendar, Check, X, Building, Car, AlertCircle, Users, Phone } from "lucide-react";
 import { toast } from "sonner";
 import { useT, useLocale } from "@/shared/lib/i18n/client";
-import { formatDate } from "@/shared/lib/format";
+import { formatDate, toDateTimeLocalValue } from "@/shared/lib/format";
 import {
   LiyonCard,
   DataTable,
@@ -77,12 +77,8 @@ export function BookingClient({
     const tomorrowEnd = new Date(tomorrow);
     tomorrowEnd.setHours(12, 0, 0, 0);
 
-    const pad = (n: number) => String(n).padStart(2, "0");
-    const toInputString = (d: Date) =>
-      `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-
-    setFormStartTime(toInputString(tomorrow));
-    setFormEndTime(toInputString(tomorrowEnd));
+    setFormStartTime(toDateTimeLocalValue(tomorrow));
+    setFormEndTime(toDateTimeLocalValue(tomorrowEnd));
     setFormTitle("");
     setFormAttendees(1);
     setFormPhone("");
@@ -110,10 +106,10 @@ export function BookingClient({
         setCreateModalOpen(false);
         await refreshReservations();
       } else {
-        if (res.error.message.includes("booking.conflict")) {
+        if (res.error.code === "conflict" || res.error.message.includes("booking.conflict")) {
           toast.error(t("booking.conflict"));
         } else {
-          toast.error(res.error.message || t("common.error"));
+          toast.error(res.error.message ? t(res.error.message as Parameters<typeof t>[0]) : t("common.error"));
         }
       }
     });

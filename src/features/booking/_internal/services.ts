@@ -1,4 +1,6 @@
 import { prisma } from "@/shared/lib/infra/prisma";
+import { errors } from "@/shared/lib/errors";
+import { writeAudit } from "@/features/identity/server";
 import type { CreateReservationInput, DecideReservationInput } from "./validations";
 
 export interface ResourceDto {
@@ -141,7 +143,7 @@ export async function createReservation(
   });
 
   if (collision) {
-    throw new Error("booking.conflict");
+    throw errors.conflict("booking.conflict");
   }
 
   const created = await prisma.reservation.create({
@@ -177,23 +179,40 @@ export async function decideReservation(
   });
 
   if (!reservation) {
-    throw new Error("Reservation not found");
+    throw errors.not_found("booking.notFound");
   }
 
-  const updated = await prisma.reservation.update({
-    where: { id: input.reservationId },
-    data: {
-      status: input.decision,
-      rejectReason: input.decision === "REJECTED" ? input.rejectReason ?? null : null,
-      approvedById: approverId,
-      approvedAt: new Date(),
-    },
-    include: {
-      resource: true,
-      user: {
-        select: { id: true, name: true, email: true },
+  const updated = await prisma.$transaction(async (tx) => {
+    const res = await tx.reservation.update({
+      where: { id: input.reservationId },
+      data: {
+        status: input.decision,
+        rejectReason: input.decision === "REJECTED" ? input.rejectReason ?? null : null,
+        approvedById: approverId,
+        approvedAt: new Date(),
       },
-    },
+      include: {
+        resource: true,
+        user: {
+          select: { id: true, name: true, email: true },
+        },
+      },
+    });
+
+    await writeAudit(
+      {
+        tenantId,
+        actorId: approverId,
+        action: `booking.${input.decision.toLowerCase()}`,
+        entity: "reservation",
+        entityId: res.id,
+        before: { status: reservation.status },
+        after: { status: input.decision, rejectReason: input.rejectReason },
+      },
+      tx,
+    );
+
+    return res;
   });
 
   return mapReservationDto(updated);

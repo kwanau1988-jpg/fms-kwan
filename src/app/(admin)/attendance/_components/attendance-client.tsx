@@ -106,7 +106,7 @@ export function AttendanceClient({
         setCreateModalOpen(false);
         await refreshSessions();
       } else {
-        toast.error(res.error.message || t("common.error"));
+        toast.error(res.error.message ? t(res.error.message as Parameters<typeof t>[0]) : t("common.error"));
       }
     });
   };
@@ -123,10 +123,10 @@ export function AttendanceClient({
       const res = await rotateSessionQrAction(activeSession.id);
       if (res.ok) {
         setActiveSession(res.data);
-        toast.success("เปลี่ยนรหัส QR เรียบร้อยแล้ว");
+        toast.success(t("common.saveSuccess"));
         await refreshSessions();
       } else {
-        toast.error(res.error.message || t("common.error"));
+        toast.error(res.error.message ? t(res.error.message as Parameters<typeof t>[0]) : t("common.error"));
       }
     });
   };

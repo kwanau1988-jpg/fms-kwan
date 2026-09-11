@@ -30,4 +30,5 @@ export const bookingMessages = {
   "booking.status.APPROVED": { th: "อนุมัติแล้ว", en: "Approved" },
   "booking.status.REJECTED": { th: "ปฏิเสธ", en: "Rejected" },
   "booking.status.CANCELLED": { th: "ยกเลิกแล้ว", en: "Cancelled" },
+  "booking.notFound": { th: "ไม่พบข้อมูลรายการจอง", en: "Reservation not found" },
 } as const;

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { formatDate, localizedName, academicYearLabel } from "./format";
+import { formatDate, localizedName, academicYearLabel, toDateTimeLocalValue } from "./format";
 
 const d = new Date("2026-09-07T03:04:00Z");
 
@@ -40,5 +40,12 @@ describe("academicYearLabel", () => {
   it("ไทย = ปีการศึกษา พ.ศ. · อังกฤษ = AY ค.ศ.", () => {
     expect(academicYearLabel(2569, "th")).toBe("ปีการศึกษา 2569");
     expect(academicYearLabel(2569, "en")).toBe("AY 2026");
+  });
+});
+
+describe("toDateTimeLocalValue", () => {
+  it("แปลง Date เป็นรูปแบบ YYYY-MM-DDTHH:mm ถูกต้อง", () => {
+    const testDate = new Date(2026, 8, 15, 9, 5); // month 8 = September
+    expect(toDateTimeLocalValue(testDate)).toBe("2026-09-15T09:05");
   });
 });

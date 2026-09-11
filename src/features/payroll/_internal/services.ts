@@ -1,5 +1,7 @@
 import crypto from "crypto";
 import { prisma } from "@/shared/lib/infra/prisma";
+import { errors } from "@/shared/lib/errors";
+import { writeAudit } from "@/features/identity/server";
 import type {
   CreatePeriodInput,
   TogglePublishPeriodInput,
@@ -62,7 +64,7 @@ export function encryptPayload(data: Record<string, unknown> | object): string {
 export function decryptPayload<T = unknown>(encryptedString: string): T {
   const parts = encryptedString.split(":");
   if (parts.length !== 3) {
-    throw new Error("Invalid encrypted payload format");
+    throw errors.validation("payroll.invalidPayload");
   }
 
   const [ivHex, tagHex, dataHex] = parts;
@@ -127,13 +129,30 @@ export async function createPeriod(
 export async function togglePublishPeriod(
   tenantId: string,
   input: TogglePublishPeriodInput,
+  actorId?: string,
 ): Promise<PayrollPeriodDto> {
-  const updated = await prisma.payrollPeriod.update({
-    where: { id: input.periodId, tenantId },
-    data: { isPublished: input.isPublished },
-    include: {
-      _count: { select: { slips: true } },
-    },
+  const updated = await prisma.$transaction(async (tx) => {
+    const period = await tx.payrollPeriod.update({
+      where: { id: input.periodId, tenantId },
+      data: { isPublished: input.isPublished },
+      include: {
+        _count: { select: { slips: true } },
+      },
+    });
+
+    await writeAudit(
+      {
+        tenantId,
+        actorId: actorId ?? null,
+        action: input.isPublished ? "payroll.publish" : "payroll.unpublish",
+        entity: "payroll_period",
+        entityId: period.id,
+        after: { isPublished: input.isPublished, year: period.year, month: period.month },
+      },
+      tx,
+    );
+
+    return period;
   });
 
   return {
@@ -155,7 +174,7 @@ export async function generateDemoSlipsForPeriod(
     where: { id: input.periodId, tenantId },
   });
 
-  if (!period) throw new Error("Payroll period not found");
+  if (!period) throw errors.not_found("payroll.periodNotFound");
 
   const users = await prisma.user.findMany({
     where: {
@@ -165,8 +184,7 @@ export async function generateDemoSlipsForPeriod(
     select: { id: true, name: true, email: true },
   });
 
-  let count = 0;
-  for (const user of users) {
+  const operations = users.map((user) => {
     // Generate realistic Thai academic payroll breakdown
     const baseSalary = 35000 + Math.floor(Math.random() * 25000);
     const academicAllowance = Math.random() > 0.4 ? 11200 : 5600;
@@ -199,7 +217,7 @@ export async function generateDemoSlipsForPeriod(
     const lastDigits = Math.floor(1000 + Math.random() * 9000);
     const bankAccountMasked = `xxx-x-xx${lastDigits}-0`;
 
-    await prisma.payrollSlip.upsert({
+    return prisma.payrollSlip.upsert({
       where: {
         periodId_userId: {
           periodId: period.id,
@@ -220,10 +238,10 @@ export async function generateDemoSlipsForPeriod(
         bankAccountMasked,
       },
     });
-    count++;
-  }
+  });
 
-  return count;
+  await prisma.$transaction(operations);
+  return users.length;
 }
 
 export async function listMySlips(

@@ -112,7 +112,7 @@ export function DocumentClient({
         setCreateModalOpen(false);
         await refreshItems();
       } else {
-        toast.error(res.error.message || t("common.error"));
+        toast.error(res.error.message ? t(res.error.message as Parameters<typeof t>[0]) : t("common.error"));
       }
     });
   };
@@ -138,7 +138,7 @@ export function DocumentClient({
         setDecisionComment("");
         await refreshItems();
       } else {
-        toast.error(res.error.message || t("common.error"));
+        toast.error(res.error.message ? t(res.error.message as Parameters<typeof t>[0]) : t("common.error"));
       }
     });
   };

@@ -106,7 +106,7 @@ export function PayrollAdminClient({ initialPeriods }: Props) {
         setCreateModalOpen(false);
         await refreshPeriods();
       } else {
-        toast.error(res.error.message || t("common.error"));
+        toast.error(res.error.message ? t(res.error.message as Parameters<typeof t>[0]) : t("common.error"));
       }
     });
   };
@@ -121,12 +121,12 @@ export function PayrollAdminClient({ initialPeriods }: Props) {
       if (res.ok) {
         toast.success(
           !period.isPublished
-            ? "เผยแพร่สลิปเงินเดือนให้บุคลากรแล้ว"
-            : "ยกเลิกการเผยแพร่สลิปเงินเดือนแล้ว",
+            ? t("payroll.published")
+            : t("payroll.draft"),
         );
         await refreshPeriods();
       } else {
-        toast.error(res.error.message || t("common.error"));
+        toast.error(res.error.message ? t(res.error.message as Parameters<typeof t>[0]) : t("common.error"));
       }
     });
   };
@@ -138,10 +138,10 @@ export function PayrollAdminClient({ initialPeriods }: Props) {
       });
 
       if (res.ok) {
-        toast.success(`จำลองสลิปเงินเดือนสำเร็จ (${res.data.count} ท่าน)`);
+        toast.success(`${t("payroll.generateDemo")} (${res.data.count})`);
         await refreshPeriods();
       } else {
-        toast.error(res.error.message || t("common.error"));
+        toast.error(res.error.message ? t(res.error.message as Parameters<typeof t>[0]) : t("common.error"));
       }
     });
   };

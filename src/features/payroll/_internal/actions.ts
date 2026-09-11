@@ -63,7 +63,7 @@ export async function togglePublishPeriodAction(
   return runAction(async () => {
     const ctx = await requirePermission(PAYROLL_P.payrollManage);
     const parsed = togglePublishPeriodSchema.parse(input, { error: zodErrorMap(await getLocale()) });
-    const result = await togglePublishPeriod(ctx.tenantId, parsed);
+    const result = await togglePublishPeriod(ctx.tenantId, parsed, ctx.userId);
     revalidatePath("/payroll");
     revalidatePath("/me/payroll");
     return result;

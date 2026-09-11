@@ -9,6 +9,7 @@ import { documentMessages as document } from "@/features/e-document/messages";
 import { bookingMessages as booking } from "@/features/booking/messages";
 import { attendanceMessages as attendance } from "@/features/attendance/messages";
 import { payrollMessages as payroll } from "@/features/payroll/messages";
+import { portalMessages as portal } from "./messages/portal";
 
 /** พจนานุกรม UI ทั้งระบบ — feature ใหม่เพิ่มบรรทัด import ที่นี่ · key ต้องไม่ซ้ำข้าม feature */
 export const UI_MESSAGES: Dictionary = {
@@ -22,4 +23,5 @@ export const UI_MESSAGES: Dictionary = {
   ...booking,
   ...attendance,
   ...payroll,
+  ...portal,
 };

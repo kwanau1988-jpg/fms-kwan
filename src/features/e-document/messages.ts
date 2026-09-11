@@ -36,4 +36,8 @@ export const documentMessages = {
   "document.type.LEAVE": { th: "ใบลา (ลาป่วย / ลากิจ / ลาพักผ่อน)", en: "Leave Request" },
   "document.type.PROCUREMENT": { th: "ขออนุมัติจัดซื้อจัดจ้าง / พัสดุ", en: "Procurement Request" },
   "document.type.GENERAL": { th: "บันทึกข้อความทั่วไป", en: "General Memorandum" },
+  "document.notFound": { th: "ไม่พบข้อมูลคำร้องเอกสาร", en: "Document request not found" },
+  "document.notPending": { th: "เอกสารนี้ไม่ได้อยู่ในสถานะรอพิจารณาแล้ว", en: "Document is no longer pending approval" },
+  "document.invalidStep": { th: "ขั้นตอนการอนุมัติไม่ถูกต้อง", en: "Invalid approval step" },
+  "document.notApprover": { th: "คุณไม่ใช่ผู้มีอำนาจพิจารณาในขั้นตอนนี้", en: "You are not the designated approver for this step" },
 } as const;

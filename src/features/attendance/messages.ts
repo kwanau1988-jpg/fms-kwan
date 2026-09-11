@@ -29,4 +29,5 @@ export const attendanceMessages = {
   "attendance.status.ABSENT": { th: "ขาดเรียน", en: "Absent" },
   "attendance.status.EXCUSED": { th: "มีใบลา", en: "Excused" },
   "attendance.manualEdit": { th: "ปรับสถานะ", en: "Update Status" },
+  "attendance.sessionInactive": { th: "คาบเรียนนี้ยังไม่เปิดหรือถูกปิดการเช็คชื่อแล้ว", en: "Classroom session is not currently active" },
 } as const;

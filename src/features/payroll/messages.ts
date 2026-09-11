@@ -32,4 +32,6 @@ export const payrollMessages = {
   "payroll.generateDemo": { th: "จำลองสลิปบุคลากรทั้งหมด", en: "Generate Demo Slips" },
   "payroll.viewSlip": { th: "ดูสลิปเงินเดือน", en: "View Slip" },
   "payroll.empty": { th: "ไม่พบข้อมูลสลิปเงินเดือน", en: "No payroll records found" },
+  "payroll.periodNotFound": { th: "ไม่พบข้อมูลงวดเงินเดือนที่ระบุ", en: "Payroll period not found" },
+  "payroll.invalidPayload": { th: "รูปแบบข้อมูลสลิปที่เข้ารหัสไม่ถูกต้อง", en: "Invalid encrypted payroll payload" },
 } as const;

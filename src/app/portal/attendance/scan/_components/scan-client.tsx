@@ -32,13 +32,8 @@ export function ScanClient() {
         toast.success(t("attendance.checkInSuccess"));
         setSuccess(true);
       } else {
-        if (res.error.message.includes("attendance.tokenExpired")) {
-          toast.error(t("attendance.tokenExpired"));
-        } else if (res.error.message.includes("attendance.alreadyChecked")) {
-          toast.error(t("attendance.alreadyChecked"));
-        } else {
-          toast.error(res.error.message || t("common.error"));
-        }
+        const msgKey = res.error.message as Parameters<typeof t>[0];
+        toast.error(t(msgKey) || res.error.message || t("common.error"));
       }
     });
   };
@@ -53,7 +48,7 @@ export function ScanClient() {
           {t("attendance.scanTitle")}
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
-          กรอกรหัส Dynamic Token จากหน้าจอโปรเจกเตอร์ของผู้สอนเพื่อเช็คชื่อ
+          {t("attendance.qrRotateNotice")}
         </p>
       </div>
 

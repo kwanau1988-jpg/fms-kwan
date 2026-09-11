@@ -1,19 +1,18 @@
 import Link from "next/link";
 import { auth } from "@/features/identity/server";
 import { LanguageSwitcher } from "@/components/layout/language-switcher";
-import { getLocale } from "@/shared/lib/i18n/server";
+import { getT } from "@/i18n/server";
 import { GraduationCap, LogIn, LayoutDashboard, Newspaper, Users, BookOpen, Calendar, Building2 } from "lucide-react";
 
 export default async function PortalLayout({ children }: { children: React.ReactNode }) {
-  const [session, locale] = await Promise.all([auth().catch(() => null), getLocale()]);
-  const isTh = locale === "th";
+  const [session, t] = await Promise.all([auth().catch(() => null), getT()]);
 
   const navLinks = [
-    { href: "/portal", label: isTh ? "หน้าแรก" : "Home", icon: Building2 },
-    { href: "/portal/news", label: isTh ? "ข่าวสาร" : "News", icon: Newspaper },
-    { href: "/portal/personnel", label: isTh ? "บุคลากร" : "Personnel", icon: Users },
-    { href: "/portal/curriculum", label: isTh ? "หลักสูตร" : "Curricula", icon: BookOpen },
-    { href: "/portal/facilities", label: isTh ? "จองห้อง/ยานพาหนะ" : "Facilities", icon: Calendar },
+    { href: "/portal", label: t("portal.nav.home"), icon: Building2 },
+    { href: "/portal/news", label: t("portal.nav.news"), icon: Newspaper },
+    { href: "/portal/personnel", label: t("portal.nav.personnel"), icon: Users },
+    { href: "/portal/curriculum", label: t("portal.nav.curriculum"), icon: BookOpen },
+    { href: "/portal/facilities", label: t("portal.nav.facilities"), icon: Calendar },
   ];
 
   return (
@@ -28,10 +27,10 @@ export default async function PortalLayout({ children }: { children: React.React
               </div>
               <div className="flex flex-col">
                 <span className="font-bold text-base leading-tight tracking-tight text-foreground group-hover:text-brand transition-colors">
-                  {isTh ? "คณะวิทยาการจัดการ" : "Faculty of Management Science"}
+                  {t("portal.facultyName")}
                 </span>
                 <span className="text-xs text-muted-foreground">
-                  {isTh ? "Faculty Web Platform" : "Academic & Research Portal"}
+                  {t("portal.tagline")}
                 </span>
               </div>
             </Link>
@@ -64,7 +63,7 @@ export default async function PortalLayout({ children }: { children: React.React
                 className="inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium rounded-lg bg-brand text-on-brand shadow-xs hover:bg-brand/90 transition-colors"
               >
                 <LayoutDashboard className="w-4 h-4" />
-                <span>{isTh ? "ระบบจัดการ" : "Dashboard"}</span>
+                <span>{t("portal.nav.dashboard")}</span>
               </Link>
             ) : (
               <Link
@@ -72,7 +71,7 @@ export default async function PortalLayout({ children }: { children: React.React
                 className="inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium rounded-lg bg-brand text-on-brand shadow-xs hover:bg-brand/90 transition-colors"
               >
                 <LogIn className="w-4 h-4" />
-                <span>{isTh ? "เข้าสู่ระบบ" : "Sign In"}</span>
+                <span>{t("portal.nav.signIn")}</span>
               </Link>
             )}
           </div>
@@ -93,41 +92,39 @@ export default async function PortalLayout({ children }: { children: React.React
                 <GraduationCap className="w-5 h-5 text-brand" />
               </div>
               <span className="font-bold text-foreground">
-                {isTh ? "คณะวิทยาการจัดการ" : "Faculty of Management Science"}
+                {t("portal.facultyName")}
               </span>
             </div>
             <p className="text-sm max-w-md leading-relaxed">
-              {isTh
-                ? "มุ่งมั่นผลิตบัณฑิตที่มีคุณภาพและคุณธรรม พัฒนางานวิจัยและนวัตกรรมสู่สังคมและองค์กรระดับสากล"
-                : "Committed to educating ethical and visionary leaders, advancing research and impactful innovations."}
+              {t("portal.footer.about")}
             </p>
           </div>
 
           <div>
             <h4 className="font-semibold text-foreground text-sm mb-3">
-              {isTh ? "การนำทาง" : "Quick Links"}
+              {t("portal.footer.quickLinks")}
             </h4>
             <ul className="space-y-2 text-sm">
-              <li><Link href="/portal/news" className="hover:text-foreground transition-colors">{isTh ? "ข่าวประชาสัมพันธ์" : "Announcements"}</Link></li>
-              <li><Link href="/portal/personnel" className="hover:text-foreground transition-colors">{isTh ? "ทำเนียบคณาจารย์และบุคลากร" : "Staff Directory"}</Link></li>
-              <li><Link href="/portal/curriculum" className="hover:text-foreground transition-colors">{isTh ? "หลักสูตรระดับปริญญา" : "Academic Programs"}</Link></li>
-              <li><Link href="/portal/facilities" className="hover:text-foreground transition-colors">{isTh ? "ปฏิทินการใช้ห้องและรถ" : "Reservations Calendar"}</Link></li>
+              <li><Link href="/portal/news" className="hover:text-foreground transition-colors">{t("portal.nav.news")}</Link></li>
+              <li><Link href="/portal/personnel" className="hover:text-foreground transition-colors">{t("portal.nav.personnel")}</Link></li>
+              <li><Link href="/portal/curriculum" className="hover:text-foreground transition-colors">{t("portal.nav.curriculum")}</Link></li>
+              <li><Link href="/portal/facilities" className="hover:text-foreground transition-colors">{t("portal.nav.facilities")}</Link></li>
             </ul>
           </div>
 
           <div>
             <h4 className="font-semibold text-foreground text-sm mb-3">
-              {isTh ? "ระบบบริการภายใน" : "Staff & Student Portal"}
+              {t("portal.footer.contact")}
             </h4>
             <ul className="space-y-2 text-sm">
-              <li><Link href="/login" className="hover:text-foreground transition-colors">{isTh ? "เข้าสู่ระบบบุคลากร (SSO)" : "Staff Login"}</Link></li>
-              <li><Link href="/dashboard" className="hover:text-foreground transition-colors">{isTh ? "ระบบบริหารงานคณะ (Admin)" : "Admin Console"}</Link></li>
+              <li><Link href="/login" className="hover:text-foreground transition-colors">{t("portal.nav.signIn")}</Link></li>
+              <li><Link href="/dashboard" className="hover:text-foreground transition-colors">{t("portal.nav.dashboard")}</Link></li>
             </ul>
           </div>
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 pt-8 border-t border-border/30 text-xs text-center">
-          © {new Date().getFullYear()} Faculty of Management Science. All rights reserved. Powered by VibeCore Framework.
+          © {new Date().getFullYear()} {t("portal.facultyName")}. {t("portal.footer.rights")}
         </div>
       </footer>
     </div>

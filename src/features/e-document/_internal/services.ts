@@ -1,4 +1,6 @@
 import { prisma } from "@/shared/lib/infra/prisma";
+import { errors } from "@/shared/lib/errors";
+import { writeAudit } from "@/features/identity/server";
 import type { CreateDocumentInput, DecideDocumentInput } from "./validations";
 
 import type { Prisma } from "@/generated/prisma";
@@ -169,22 +171,20 @@ export async function createDocumentRequest(
       },
     });
 
-    for (let i = 0; i < input.approverIds.length; i++) {
-      await tx.documentApproval.create({
-        data: {
-          requestId: doc.id,
-          stepOrder: i + 1,
-          approverId: input.approverIds[i],
-          decision: "PENDING",
-        },
-      });
-    }
+    await tx.documentApproval.createMany({
+      data: input.approverIds.map((approverId, i) => ({
+        requestId: doc.id,
+        stepOrder: i + 1,
+        approverId,
+        decision: "PENDING",
+      })),
+    });
 
     return doc;
   });
 
   const full = await getDocumentRequestById(tenantId, created.id);
-  if (!full) throw new Error("Failed to load created document request");
+  if (!full) throw errors.internal("Failed to load created document request");
   return full;
 }
 
@@ -204,20 +204,20 @@ export async function decideDocumentApproval(
   });
 
   if (!doc) {
-    throw new Error("Document not found");
+    throw errors.not_found("document.notFound");
   }
 
   if (doc.status !== "PENDING") {
-    throw new Error("Document is no longer pending approval");
+    throw errors.conflict("document.notPending");
   }
 
   const currentApproval = doc.approvals.find((a) => a.stepOrder === doc.currentStep);
   if (!currentApproval) {
-    throw new Error("Invalid approval step");
+    throw errors.validation("document.invalidStep");
   }
 
   if (!isAdmin && currentApproval.approverId !== actorId) {
-    throw new Error("You are not the designated approver for this step");
+    throw errors.forbidden("document.notApprover");
   }
 
   await prisma.$transaction(async (tx) => {
@@ -249,9 +249,22 @@ export async function decideDocumentApproval(
         });
       }
     }
+
+    await writeAudit(
+      {
+        tenantId,
+        actorId,
+        action: `document.${input.decision.toLowerCase()}`,
+        entity: "document_request",
+        entityId: doc.id,
+        before: { status: doc.status, currentStep: doc.currentStep },
+        after: { decision: input.decision, comment: input.comment },
+      },
+      tx,
+    );
   });
 
   const updated = await getDocumentRequestById(tenantId, doc.id);
-  if (!updated) throw new Error("Failed to reload updated document");
+  if (!updated) throw errors.internal("Failed to reload updated document");
   return updated;
 }
