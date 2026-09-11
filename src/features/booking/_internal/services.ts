@@ -1,7 +1,13 @@
 import { prisma } from "@/shared/lib/infra/prisma";
 import { errors } from "@/shared/lib/errors";
 import { writeAudit } from "@/features/identity/server";
-import type { CreateReservationInput, DecideReservationInput } from "./validations";
+import type {
+  CreateReservationInput,
+  DecideReservationInput,
+  UpdateReservationInput,
+  CreateResourceInput,
+  UpdateResourceInput,
+} from "./validations";
 
 export interface ResourceDto {
   id: string;
@@ -76,12 +82,13 @@ function mapReservationDto(res: ReservationWithRelations): ReservationDto {
 export async function listResources(
   tenantId: string,
   type?: "ROOM" | "VEHICLE",
+  includeUnavailable = false,
 ): Promise<ResourceDto[]> {
   const items = await prisma.resource.findMany({
     where: {
       tenantId,
       ...(type ? { type } : {}),
-      isAvailable: true,
+      ...(includeUnavailable ? {} : { isAvailable: true }),
     },
     orderBy: { nameTh: "asc" },
   });
@@ -217,3 +224,306 @@ export async function decideReservation(
 
   return mapReservationDto(updated);
 }
+
+export async function updateReservation(
+  tenantId: string,
+  userId: string,
+  input: UpdateReservationInput,
+  isManager = false,
+): Promise<ReservationDto> {
+  const reservation = await prisma.reservation.findFirst({
+    where: { id: input.reservationId, tenantId },
+  });
+
+  if (!reservation) {
+    throw errors.not_found("booking.notFound");
+  }
+
+  if (!isManager && reservation.userId !== userId) {
+    throw errors.forbidden("error.forbidden");
+  }
+
+  const start = new Date(input.startTime);
+  const end = new Date(input.endTime);
+
+  // Check collision with existing pending or approved reservations, excluding this reservation itself
+  const collision = await prisma.reservation.findFirst({
+    where: {
+      tenantId,
+      resourceId: input.resourceId,
+      id: { not: input.reservationId },
+      status: { in: ["PENDING", "APPROVED"] },
+      startTime: { lt: end },
+      endTime: { gt: start },
+    },
+  });
+
+  if (collision) {
+    throw errors.conflict("booking.conflict");
+  }
+
+  const updated = await prisma.$transaction(async (tx) => {
+    const res = await tx.reservation.update({
+      where: { id: input.reservationId },
+      data: {
+        resourceId: input.resourceId,
+        title: input.title,
+        startTime: start,
+        endTime: end,
+        attendeesCount: input.attendeesCount,
+        contactPhone: input.contactPhone ?? null,
+      },
+      include: {
+        resource: true,
+        user: {
+          select: { id: true, name: true, email: true },
+        },
+      },
+    });
+
+    await writeAudit(
+      {
+        tenantId,
+        actorId: userId,
+        action: "booking.update",
+        entity: "reservation",
+        entityId: res.id,
+        before: {
+          title: reservation.title,
+          resourceId: reservation.resourceId,
+          startTime: reservation.startTime.toISOString(),
+          endTime: reservation.endTime.toISOString(),
+        },
+        after: {
+          title: input.title,
+          resourceId: input.resourceId,
+          startTime: start.toISOString(),
+          endTime: end.toISOString(),
+        },
+      },
+      tx,
+    );
+
+    return res;
+  });
+
+  return mapReservationDto(updated);
+}
+
+export async function cancelReservation(
+  tenantId: string,
+  userId: string,
+  reservationId: string,
+  isManager = false,
+): Promise<ReservationDto> {
+  const reservation = await prisma.reservation.findFirst({
+    where: { id: reservationId, tenantId },
+  });
+
+  if (!reservation) {
+    throw errors.not_found("booking.notFound");
+  }
+
+  if (!isManager && reservation.userId !== userId) {
+    throw errors.forbidden("error.forbidden");
+  }
+
+  const updated = await prisma.$transaction(async (tx) => {
+    const res = await tx.reservation.update({
+      where: { id: reservationId },
+      data: {
+        status: "CANCELLED",
+      },
+      include: {
+        resource: true,
+        user: {
+          select: { id: true, name: true, email: true },
+        },
+      },
+    });
+
+    await writeAudit(
+      {
+        tenantId,
+        actorId: userId,
+        action: "booking.cancel",
+        entity: "reservation",
+        entityId: res.id,
+        before: { status: reservation.status },
+        after: { status: "CANCELLED" },
+      },
+      tx,
+    );
+
+    return res;
+  });
+
+  return mapReservationDto(updated);
+}
+
+export async function createResource(
+  tenantId: string,
+  actorId: string,
+  input: CreateResourceInput,
+): Promise<ResourceDto> {
+  const created = await prisma.$transaction(async (tx) => {
+    const res = await tx.resource.create({
+      data: {
+        tenantId,
+        type: input.type,
+        nameTh: input.nameTh,
+        nameEn: input.nameEn,
+        capacity: input.capacity,
+        locationOrPlate: input.locationOrPlate,
+        amenities: input.amenities,
+        imageUrl: input.imageUrl ?? null,
+        isAvailable: input.isAvailable,
+      },
+    });
+
+    await writeAudit(
+      {
+        tenantId,
+        actorId,
+        action: "resource.create",
+        entity: "resource",
+        entityId: res.id,
+        after: {
+          nameTh: res.nameTh,
+          type: res.type,
+          capacity: res.capacity,
+        },
+      },
+      tx,
+    );
+
+    return res;
+  });
+
+  return {
+    id: created.id,
+    tenantId: created.tenantId,
+    type: created.type,
+    nameTh: created.nameTh,
+    nameEn: created.nameEn,
+    capacity: created.capacity,
+    locationOrPlate: created.locationOrPlate,
+    amenities: Array.isArray(created.amenities) ? (created.amenities as string[]) : [],
+    imageUrl: created.imageUrl,
+    isAvailable: created.isAvailable,
+  };
+}
+
+export async function updateResource(
+  tenantId: string,
+  actorId: string,
+  input: UpdateResourceInput,
+): Promise<ResourceDto> {
+  const resource = await prisma.resource.findFirst({
+    where: { id: input.resourceId, tenantId },
+  });
+
+  if (!resource) {
+    throw errors.not_found("booking.notFound");
+  }
+
+  const updated = await prisma.$transaction(async (tx) => {
+    const res = await tx.resource.update({
+      where: { id: input.resourceId },
+      data: {
+        ...(input.type ? { type: input.type } : {}),
+        ...(input.nameTh ? { nameTh: input.nameTh } : {}),
+        ...(input.nameEn ? { nameEn: input.nameEn } : {}),
+        ...(input.capacity !== undefined ? { capacity: input.capacity } : {}),
+        ...(input.locationOrPlate ? { locationOrPlate: input.locationOrPlate } : {}),
+        ...(input.amenities ? { amenities: input.amenities } : {}),
+        ...(input.imageUrl !== undefined ? { imageUrl: input.imageUrl } : {}),
+        ...(input.isAvailable !== undefined ? { isAvailable: input.isAvailable } : {}),
+      },
+    });
+
+    await writeAudit(
+      {
+        tenantId,
+        actorId,
+        action: "resource.update",
+        entity: "resource",
+        entityId: res.id,
+        before: {
+          nameTh: resource.nameTh,
+          capacity: resource.capacity,
+          isAvailable: resource.isAvailable,
+        },
+        after: {
+          nameTh: res.nameTh,
+          capacity: res.capacity,
+          isAvailable: res.isAvailable,
+        },
+      },
+      tx,
+    );
+
+    return res;
+  });
+
+  return {
+    id: updated.id,
+    tenantId: updated.tenantId,
+    type: updated.type,
+    nameTh: updated.nameTh,
+    nameEn: updated.nameEn,
+    capacity: updated.capacity,
+    locationOrPlate: updated.locationOrPlate,
+    amenities: Array.isArray(updated.amenities) ? (updated.amenities as string[]) : [],
+    imageUrl: updated.imageUrl,
+    isAvailable: updated.isAvailable,
+  };
+}
+
+export async function deleteResource(
+  tenantId: string,
+  actorId: string,
+  resourceId: string,
+): Promise<{ id: string }> {
+  const resource = await prisma.resource.findFirst({
+    where: { id: resourceId, tenantId },
+  });
+
+  if (!resource) {
+    throw errors.not_found("booking.notFound");
+  }
+
+  const inUse = await prisma.reservation.findFirst({
+    where: {
+      tenantId,
+      resourceId,
+      status: { in: ["PENDING", "APPROVED"] },
+      endTime: { gte: new Date() },
+    },
+  });
+
+  if (inUse) {
+    throw errors.conflict("booking.resource.cannotDeleteInUse");
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.resource.delete({
+      where: { id: resourceId },
+    });
+
+    await writeAudit(
+      {
+        tenantId,
+        actorId,
+        action: "resource.delete",
+        entity: "resource",
+        entityId: resourceId,
+        before: { nameTh: resource.nameTh },
+      },
+      tx,
+    );
+  });
+
+  return { id: resourceId };
+}
+

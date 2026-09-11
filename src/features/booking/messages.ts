@@ -31,4 +31,46 @@ export const bookingMessages = {
   "booking.status.REJECTED": { th: "ปฏิเสธ", en: "Rejected" },
   "booking.status.CANCELLED": { th: "ยกเลิกแล้ว", en: "Cancelled" },
   "booking.notFound": { th: "ไม่พบข้อมูลรายการจอง", en: "Reservation not found" },
+
+  // Edit & Cancel Reservations
+  "booking.edit": { th: "แก้ไขการจอง", en: "Edit Reservation" },
+  "booking.editSubtitle": { th: "ปรับเปลี่ยนรายละเอียด วันเวลา หรือทรัพยากรที่ต้องการจอง", en: "Update meeting details, date/time, or selected resource" },
+  "booking.editSuccess": { th: "แก้ไขข้อมูลการจองเรียบร้อยแล้ว", en: "Reservation updated successfully" },
+  "booking.cancel": { th: "ยกเลิกการจอง", en: "Cancel Reservation" },
+  "booking.cancelConfirm": { th: "ยืนยันการยกเลิกรายการจองนี้หรือไม่? รายการจะเปลี่ยนสถานะเป็นยกเลิก", en: "Are you sure you want to cancel this reservation? The status will become cancelled." },
+  "booking.cancelSuccess": { th: "ยกเลิกรายการจองเรียบร้อยแล้ว", en: "Reservation cancelled successfully" },
+  "booking.deleteSuccess": { th: "ลบรายการเรียบร้อยแล้ว", en: "Deleted successfully" },
+
+  // Navigation & Tabs
+  "booking.tab.reservations": { th: "รายการจองห้องและยานพาหนะ", en: "Reservations" },
+  "booking.tab.resources": { th: "จัดการห้องประชุมและยานพาหนะ", en: "Rooms & Vehicles" },
+
+  // Filters & Search
+  "booking.searchPlaceholder": { th: "ค้นหาหัวข้อการประชุม, ผู้ขอจอง หรือสถานที่...", en: "Search meeting topic, booker, or location..." },
+  "booking.filter.allStatuses": { th: "สถานะทั้งหมด", en: "All Statuses" },
+  "booking.filter.allTypes": { th: "ทุกประเภททรัพยากร", en: "All Resource Types" },
+  "booking.filter.onlyRooms": { th: "เฉพาะห้องประชุม", en: "Meeting Rooms Only" },
+  "booking.filter.onlyVehicles": { th: "เฉพาะยานพาหนะ", en: "Vehicles Only" },
+
+  // Resource Management (Rooms & Vehicles)
+  "booking.resource.manageTitle": { th: "บริหารจัดการห้องประชุมและยานพาหนะ", en: "Manage Meeting Rooms & Vehicles" },
+  "booking.resource.manageSubtitle": { th: "กำหนดรายชื่อห้อง ความจุ อุปกรณ์สิ่งอำนวยความสะดวก และเปิด/ปิดสถานะพร้อมใช้งาน", en: "Configure room names, capacity, equipment amenities, and availability status" },
+  "booking.resource.add": { th: "เพิ่มห้องประชุม / ยานพาหนะใหม่", en: "Add Room / Vehicle" },
+  "booking.resource.edit": { th: "แก้ไขข้อมูลทรัพยากร", en: "Edit Resource" },
+  "booking.resource.type": { th: "ประเภททรัพยากร", en: "Resource Type" },
+  "booking.resource.nameTh": { th: "ชื่อภาษาไทย (เช่น ห้องประชุมทองกวาว)", en: "Thai Name" },
+  "booking.resource.nameEn": { th: "ชื่อภาษาอังกฤษ (เช่น Thong-Kao Meeting Room)", en: "English Name" },
+  "booking.resource.locationOrPlate": { th: "สถานที่ตั้ง / ทะเบียนรถ (เช่น อาคาร 4 ชั้น 4 หรือ 1กข-5678)", en: "Location / Room Code / License Plate" },
+  "booking.resource.capacity": { th: "ความจุที่นั่ง (คน)", en: "Capacity (Seats)" },
+  "booking.resource.amenities": { th: "อุปกรณ์และสิ่งอำนวยความสะดวก (คั่นด้วยจุลภาค ,)", en: "Equipment & Amenities (comma separated)" },
+  "booking.resource.amenitiesPlaceholder": { th: "เช่น โปรเจกเตอร์ 4K, ระบบประชุมทางไกล Zoom/Teams, ไมโครโฟนไร้สาย, จอ LED, เครื่องปรับอากาศ, โพเดียม", en: "e.g. 4K Projector, Zoom/Teams Conference, Wireless Mics, Sound System, AC, Podium" },
+  "booking.resource.isAvailable": { th: "สถานะความพร้อมใช้งาน", en: "Availability Status" },
+  "booking.resource.available": { th: "พร้อมใช้งาน", en: "Available" },
+  "booking.resource.maintenance": { th: "ปิดปรับปรุง / ซ่อมบำรุง", en: "Under Maintenance" },
+  "booking.resource.createSuccess": { th: "เพิ่มห้องประชุม/ยานพาหนะใหม่เรียบร้อยแล้ว", en: "Resource created successfully" },
+  "booking.resource.updateSuccess": { th: "แก้ไขข้อมูลห้องประชุม/ยานพาหนะเรียบร้อยแล้ว", en: "Resource updated successfully" },
+  "booking.resource.deleteConfirm": { th: "คุณแน่ใจหรือไม่ว่าต้องการลบทรัพยากรนี้ออกจากระบบ?", en: "Are you sure you want to delete this resource?" },
+  "booking.resource.cannotDeleteInUse": { th: "ไม่สามารถลบได้เนื่องจากยังมีรายการจองที่ค้างอยู่", en: "Cannot delete resource because active reservations exist" },
+  "booking.resource.seats": { th: "ที่นั่ง", en: "Seats" },
 } as const;
+

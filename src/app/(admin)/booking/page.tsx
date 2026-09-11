@@ -6,7 +6,7 @@ export default async function BookingAdminPage() {
   const ctx = await requirePermission(BOOKING_P.bookingRead);
   const [initialReservations, initialResources] = await Promise.all([
     listReservations(ctx.tenantId),
-    listResources(ctx.tenantId),
+    listResources(ctx.tenantId, undefined, true),
   ]);
 
   return (

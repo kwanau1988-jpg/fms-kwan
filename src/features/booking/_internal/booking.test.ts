@@ -2,6 +2,9 @@ import { describe, it, expect } from "vitest";
 import {
   createReservationSchema,
   decideReservationSchema,
+  updateReservationSchema,
+  createResourceSchema,
+  updateResourceSchema,
 } from "./validations";
 
 /**
@@ -98,4 +101,48 @@ describe("booking validations & collision logic", () => {
       expect(hasTimeConflict(existingStart, existingEnd, newStart, newEnd)).toBe(true);
     });
   });
+
+  describe("updateReservationSchema & resource schemas", () => {
+    it("validate updateReservationSchema ถูกต้อง", () => {
+      const valid = {
+        reservationId: "550e8400-e29b-41d4-a716-446655440001",
+        resourceId: "550e8400-e29b-41d4-a716-446655440002",
+        title: "ประชุมแก้ไขวาระพิเศษ",
+        startTime: "2026-09-15T13:00:00.000Z",
+        endTime: "2026-09-15T15:00:00.000Z",
+        attendeesCount: 20,
+        contactPhone: "089-999-8888",
+      };
+      const parsed = updateReservationSchema.parse(valid);
+      expect(parsed.title).toBe("ประชุมแก้ไขวาระพิเศษ");
+      expect(parsed.attendeesCount).toBe(20);
+    });
+
+    it("validate createResourceSchema ถูกต้องและมีค่า default", () => {
+      const valid = {
+        type: "ROOM" as const,
+        nameTh: "ห้องประชุม Smart Boardroom MS-501",
+        nameEn: "Smart Boardroom MS-501",
+        capacity: 30,
+        locationOrPlate: "อาคาร 4 ชั้น 5",
+        amenities: ["Zoom Conference", "4K Projector", "Wireless Mic"],
+        isAvailable: true,
+      };
+      const parsed = createResourceSchema.parse(valid);
+      expect(parsed.nameTh).toBe("ห้องประชุม Smart Boardroom MS-501");
+      expect(parsed.amenities).toHaveLength(3);
+    });
+
+    it("validate updateResourceSchema ยอมรับข้อมูลแบบ partial", () => {
+      const partial = {
+        resourceId: "550e8400-e29b-41d4-a716-446655440003",
+        capacity: 50,
+        isAvailable: false,
+      };
+      const parsed = updateResourceSchema.parse(partial);
+      expect(parsed.capacity).toBe(50);
+      expect(parsed.isAvailable).toBe(false);
+    });
+  });
 });
+
