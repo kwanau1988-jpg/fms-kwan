@@ -12,6 +12,7 @@ import { useAppSession } from "@/hooks/use-session";
 import { useT, useLocale } from "@/shared/lib/i18n/client";
 import { localizedName } from "@/shared/lib/format";
 import { hasPermission, P } from "@/features/identity";
+import { getTenantBrandingAction } from "@/features/identity/actions";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -23,11 +24,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [prev, setPrev] = useState(pathname);
   const [mounted, setMounted] = useState(false);
+  const [brandLogoUrl, setBrandLogoUrl] = useState<string | null>(null);
   if (pathname !== prev) { setPrev(pathname); setDrawerOpen(false); }
-  // ธง mounted กัน hydration mismatch: เนื้อหาบางส่วน (ธีม, ค่าจาก sidebar store ที่อ่าน localStorage)
-  // ต่างกันระหว่างฝั่ง server กับ client จึงต้องรอ mount ก่อนค่อยเรนเดอร์ของจริง — เป็น setState ที่ตั้งใจ
-  // ให้เกิดครั้งเดียวตอน mount ซึ่งกฎนี้จับรวมโดยไม่แยกแยะ
+
   useEffect(() => { setMounted(true); }, []); // eslint-disable-line react-hooks/set-state-in-effect
+
+  useEffect(() => {
+    getTenantBrandingAction().then((res) => {
+      if (res.ok) {
+        setBrandLogoUrl(res.data.logoUrl ?? null);
+      }
+    });
+  }, [pathname]);
 
   if (!mounted || status === "loading") {
     return <div className="flex h-screen items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>;
@@ -45,6 +53,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <AdminShell
       brandName={t("app.name")} brandTagline={t("app.tagline")} brandHref="/dashboard"
+      brandLogoUrl={brandLogoUrl}
       breadcrumb={breadcrumb} breadcrumbLabel={t("common.breadcrumb")}
       roleLabel={roles[0] ? localizedName(roles[0], locale) : null}
       languageSwitcher={<LanguageSwitcher className="lang" />}
