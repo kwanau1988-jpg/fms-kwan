@@ -45,4 +45,24 @@ describe("updateSettingsSchema", () => {
     });
     expect(res.success).toBe(false);
   });
+
+  it("ยอมรับการตั้งค่า Gmail SMTP", () => {
+    const res = updateSettingsSchema.safeParse({
+      ...base,
+      smtp: {
+        enabled: true,
+        user: "faculty@gmail.com",
+        appPassword: "abcd efgh ijkl mnop",
+        fromName: "Faculty Platform",
+        port: 465,
+      },
+    });
+    expect(res.success).toBe(true);
+    if (res.success) {
+      expect(res.data.smtp?.enabled).toBe(true);
+      expect(res.data.smtp?.user).toBe("faculty@gmail.com");
+      expect(res.data.smtp?.port).toBe(465);
+    }
+  });
 });
+
