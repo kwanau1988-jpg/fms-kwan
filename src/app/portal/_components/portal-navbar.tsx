@@ -70,69 +70,67 @@ export function PortalNavbar({
   ];
 
   return (
-    <header className="adm-head sticky top-0 z-50 !px-3 sm:!px-6 !h-14">
-      {/* Brand Block - Matching Admin Shell Style */}
-      <Link className="brand-blk !w-auto !max-w-[260px] sm:!max-w-sm mr-2 sm:mr-4" href="/portal">
-        <i>
-          {tenantLogoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={tenantLogoUrl}
-              alt={facultyName}
-              className="w-full h-full object-contain p-0.5 rounded-sm"
-            />
-          ) : (
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M22 10 12 5 2 10l10 5 10-5Z" />
-              <path d="M6 12v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5" />
-            </svg>
+    <header className="adm-head sticky top-0 z-50 !px-0 !h-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center justify-between w-full">
+        {/* Brand Block - Matching Admin Shell Style */}
+        <Link className="brand-blk !w-auto !max-w-[260px] sm:!max-w-sm mr-2 sm:mr-4" href="/portal">
+          <i>
+            {tenantLogoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={tenantLogoUrl}
+                alt={facultyName}
+                className="w-full h-full object-contain p-0.5 rounded-sm"
+              />
+            ) : (
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M22 10 12 5 2 10l10 5 10-5Z" />
+                <path d="M6 12v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5" />
+              </svg>
+            )}
+          </i>
+          <div className="t">
+            <b>{facultyName}</b>
+            <span>{tagline}</span>
+          </div>
+        </Link>
+
+        {/* Desktop Portal Menus - Visible on all laptop and desktop screens (>= 768px) */}
+        <nav className="hidden md:flex items-center gap-1 sm:gap-1.5" aria-label="Portal Navigation">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const isActive =
+              item.href === "/portal"
+                ? pathname === "/portal"
+                : pathname.startsWith(item.href);
+
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                aria-current={isActive ? "page" : undefined}
+                className={`px-2.5 lg:px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all flex items-center gap-1.5 whitespace-nowrap ${
+                  isActive
+                    ? "bg-brand/12 text-brand font-semibold shadow-2xs"
+                    : "text-foreground/80 hover:text-foreground hover:bg-muted/80"
+                }`}
+              >
+                <Icon className={`w-4 h-4 ${isActive ? "text-brand" : "text-muted-foreground"}`} />
+                <span>{item.label}</span>
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* Right Toolbar - Identical to Admin Shell */}
+        <div className="flex items-center gap-2">
+          {/* Role Pill if logged in */}
+          {roleLabel && (
+            <span className="pill role hidden lg:inline-flex">{roleLabel}</span>
           )}
-        </i>
-        <div className="t">
-          <b>{facultyName}</b>
-          <span>{tagline}</span>
-        </div>
-      </Link>
 
-      {/* Desktop Portal Menus */}
-      <nav className="hidden xl:flex items-center gap-1 ml-1" aria-label="Portal Navigation">
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          const isActive =
-            item.href === "/portal"
-              ? pathname === "/portal"
-              : pathname.startsWith(item.href);
-
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              aria-current={isActive ? "page" : undefined}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 ${
-                isActive
-                  ? "bg-brand/12 text-brand font-bold shadow-2xs"
-                  : "text-foreground/75 hover:text-foreground hover:bg-muted/70"
-              }`}
-            >
-              <Icon className={`w-3.5 h-3.5 ${isActive ? "text-brand" : "text-muted-foreground"}`} />
-              <span>{item.label}</span>
-            </Link>
-          );
-        })}
-      </nav>
-
-      {/* Flexible Spacer */}
-      <span className="sp" />
-
-      {/* Right Toolbar - Identical to Admin Shell */}
-      <div className="flex items-center gap-2">
-        {/* Role Pill if logged in */}
-        {roleLabel && (
-          <span className="pill role hidden md:inline-flex">{roleLabel}</span>
-        )}
-
-        {/* Theme Toggle Button */}
-        <button
+          {/* Theme Toggle Button */}
+          <button
           type="button"
           className="icon-btn"
           aria-label={labels.themeToggle}
@@ -169,20 +167,21 @@ export function PortalNavbar({
           </Link>
         )}
 
-        {/* Mobile Drawer Button */}
-        <button
-          type="button"
-          className="icon-btn xl:!hidden ml-1"
-          aria-label={drawerOpen ? labels.closeMenu : labels.openMenu}
-          onClick={() => setDrawerOpen((v) => !v)}
-        >
-          {drawerOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
-        </button>
+          {/* Mobile Drawer Button */}
+          <button
+            type="button"
+            className="icon-btn md:!hidden ml-1"
+            aria-label={drawerOpen ? labels.closeMenu : labels.openMenu}
+            onClick={() => setDrawerOpen((v) => !v)}
+          >
+            {drawerOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+          </button>
+        </div>
       </div>
 
       {/* Mobile Drawer Dropdown */}
       {drawerOpen && (
-        <div className="xl:hidden absolute top-full left-0 right-0 border-b border-border/60 bg-background/95 backdrop-blur-xl p-4 shadow-xl space-y-1 animate-in fade-in slide-in-from-top-2 duration-150">
+        <div className="md:hidden absolute top-full left-0 right-0 border-b border-border/60 bg-background/95 backdrop-blur-xl p-4 shadow-xl space-y-1 animate-in fade-in slide-in-from-top-2 duration-150">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive =
