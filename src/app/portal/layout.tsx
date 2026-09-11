@@ -1,92 +1,46 @@
 import Link from "next/link";
+import { GraduationCap } from "lucide-react";
 import { auth } from "@/features/identity/server";
-import { LanguageSwitcher } from "@/components/layout/language-switcher";
 import { getT } from "@/i18n/server";
+import { getLocale } from "@/shared/lib/i18n/server";
+import { localizedName } from "@/shared/lib/format";
 import { prisma } from "@/shared/lib/infra/prisma";
-import { GraduationCap, LogIn, LayoutDashboard, Newspaper, Users, BookOpen, Calendar, Building2 } from "lucide-react";
+import { PortalNavbar } from "./_components/portal-navbar";
 
 export default async function PortalLayout({ children }: { children: React.ReactNode }) {
-  const [session, t, tenant] = await Promise.all([
+  const [session, t, locale, tenant] = await Promise.all([
     auth().catch(() => null),
     getT(),
+    getLocale(),
     prisma.tenant.findFirst({ orderBy: { createdAt: "asc" }, select: { logoUrl: true } }).catch(() => null),
   ]);
 
-  const navLinks = [
-    { href: "/portal", label: t("portal.nav.home"), icon: Building2 },
-    { href: "/portal/news", label: t("portal.nav.news"), icon: Newspaper },
-    { href: "/portal/personnel", label: t("portal.nav.personnel"), icon: Users },
-    { href: "/portal/curriculum", label: t("portal.nav.curriculum"), icon: BookOpen },
-    { href: "/portal/facilities", label: t("portal.nav.facilities"), icon: Calendar },
-  ];
+  const roleLabel = session?.roles?.[0] ? localizedName(session.roles[0], locale) : null;
 
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
-      {/* Top Bar */}
-      <header className="sticky top-0 z-40 w-full border-b border-border/50 bg-background/80 backdrop-blur-md">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link href="/portal" className="flex items-center gap-2 group">
-              <div className="w-10 h-10 rounded-xl bg-brand/10 text-brand flex items-center justify-center font-bold shadow-xs border border-brand/20 group-hover:scale-105 transition-transform overflow-hidden">
-                {tenant?.logoUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={tenant.logoUrl} alt="Logo" className="w-full h-full object-contain p-1" />
-                ) : (
-                  <GraduationCap className="w-6 h-6 text-brand" />
-                )}
-              </div>
-              <div className="flex flex-col">
-                <span className="font-bold text-base leading-tight tracking-tight text-foreground group-hover:text-brand transition-colors">
-                  {t("portal.facultyName")}
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  {t("portal.tagline")}
-                </span>
-              </div>
-            </Link>
-          </div>
+      {/* Top Bar - Liyon Admin Styled Portal Navbar */}
+      <PortalNavbar
+        tenantLogoUrl={tenant?.logoUrl}
+        facultyName={t("portal.facultyName")}
+        tagline={t("portal.tagline")}
+        sessionUser={session?.user}
+        roleLabel={roleLabel}
+        labels={{
+          home: t("portal.nav.home"),
+          news: t("portal.nav.news"),
+          personnel: t("portal.nav.personnel"),
+          curriculum: t("portal.nav.curriculum"),
+          facilities: t("portal.nav.facilities"),
+          scan: t("portal.nav.scan"),
+          signIn: t("portal.nav.signIn"),
+          dashboard: t("portal.nav.dashboard"),
+          themeToggle: t("nav.themeToggle"),
+          openMenu: t("nav.openDrawer"),
+          closeMenu: t("nav.collapse"),
+        }}
+      />
 
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-1">
-            {navLinks.map((link) => {
-              const Icon = link.icon;
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className="px-3.5 py-2 text-sm font-medium rounded-lg text-foreground/80 hover:text-foreground hover:bg-muted transition-colors flex items-center gap-1.5"
-                >
-                  <Icon className="w-4 h-4 text-muted-foreground" />
-                  <span>{link.label}</span>
-                </Link>
-              );
-            })}
-          </nav>
-
-          {/* Actions & Language */}
-          <div className="flex items-center gap-2">
-            <LanguageSwitcher className="border border-border/50 rounded-lg hover:bg-muted" />
-
-            {session?.user ? (
-              <Link
-                href="/dashboard"
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium rounded-lg bg-brand text-on-brand shadow-xs hover:bg-brand/90 transition-colors"
-              >
-                <LayoutDashboard className="w-4 h-4" />
-                <span>{t("portal.nav.dashboard")}</span>
-              </Link>
-            ) : (
-              <Link
-                href="/login"
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium rounded-lg bg-brand text-on-brand shadow-xs hover:bg-brand/90 transition-colors"
-              >
-                <LogIn className="w-4 h-4" />
-                <span>{t("portal.nav.signIn")}</span>
-              </Link>
-            )}
-          </div>
-        </div>
-      </header>
 
       {/* Main Content Area */}
       <main className="flex-1">

@@ -8,6 +8,7 @@ export const portalMessages: Dictionary = {
   "portal.nav.personnel": { th: "บุคลากร", en: "Personnel" },
   "portal.nav.curriculum": { th: "หลักสูตร", en: "Curricula" },
   "portal.nav.facilities": { th: "จองห้อง/ยานพาหนะ", en: "Facilities" },
+  "portal.nav.scan": { th: "สแกนเช็กชื่อ", en: "QR Check-in" },
   "portal.nav.signIn": { th: "เข้าสู่ระบบ", en: "Sign In" },
   "portal.nav.dashboard": { th: "ระบบจัดการ", en: "Dashboard" },
   "portal.hero.badge": { th: "ยินดีต้อนรับสู่คณะวิทยาการจัดการ", en: "Welcome to Faculty of Management Science" },
