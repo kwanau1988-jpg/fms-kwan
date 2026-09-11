@@ -121,6 +121,89 @@ export const portalMessages: Dictionary = {
   "portal.hero.card.booking": { th: "จองห้องประชุมสัมมนา", en: "Conference Booking" },
   "portal.hero.card.statusLive": { th: "ระบบออนไลน์", en: "System Online" },
   "portal.hero.card.statusSecured": { th: "เข้ารหัส AES-256", en: "AES-256 Secured" },
+
+  // GenAuxi 3D Crystal Hero Section Messages
+  "portal.hero.genauxi.badge": {
+    th: "✦ GenAuxi สถาปัตยกรรมนวัตกรรมดิจิทัล • ระบบ FMS ยุคใหม่",
+    en: "✦ GenAuxi Next-Gen Smart Architecture • FMS V2.5",
+  },
+  "portal.hero.genauxi.title_line1": {
+    th: "สร้างสรรค์อนาคต –",
+    en: "Create the Future –",
+  },
+  "portal.hero.genauxi.title_line2": {
+    th: "อย่าเป็นเพียงผู้เฝ้ามอง",
+    en: "Don't Just Watch It",
+  },
+  "portal.hero.genauxi.quote": {
+    th: "ศูนย์รวมผู้นำทางความคิดและนักนวัตกรรมที่พร้อมพลิกโฉมอนาคตของการศึกษาดิจิทัล การบริหารจัดการ และความเป็นเลิศทางวิชาการระดับสากล",
+    en: "We're empowering bold thinkers and creators ready to reshape the future of digital education, management, and research innovation.",
+  },
+  "portal.hero.genauxi.cta_primary": {
+    th: "สำรวจหลักสูตรและการศึกษา",
+    en: "Discover open programs",
+  },
+  "portal.hero.genauxi.cta_secondary": {
+    th: "เข้าใช้งานระบบบริการ",
+    en: "Launch smart portal",
+  },
+  "portal.hero.genauxi.status_operational": {
+    th: "ระบบปฏิบัติการพร้อมใช้งาน 100%",
+    en: "System Fully Operational",
+  },
+  "portal.hero.genauxi.intake_badge": {
+    th: "เปิดรับสมัคร TCAS 2569",
+    en: "Direct Intake 2026",
+  },
+  "portal.hero.genauxi.metric_programs": {
+    th: "หลักสูตรระดับสากล",
+    en: "Accredited Programs",
+  },
+  "portal.hero.genauxi.metric_employment": {
+    th: "อัตราการได้งานทำ",
+    en: "Employment Rate",
+  },
+  "portal.hero.genauxi.metric_paperless": {
+    th: "ระบบบริการไร้กระดาษ",
+    en: "Paperless Operations",
+  },
+  "portal.hero.genauxi.metric_security": {
+    th: "ความปลอดภัยสารสนเทศ",
+    en: "Enterprise Security",
+  },
+  "portal.hero.crystal.core_title": {
+    th: "ผลึกสารสนเทศอัจฉริยะ",
+    en: "Smart Faculty Core",
+  },
+  "portal.hero.crystal.core_sub": {
+    th: "ศูนย์กลางข้อมูลและบริการแบบเรียลไทม์",
+    en: "Real-time Verified Knowledge Node",
+  },
+  "portal.hero.crystal.badge_quality": {
+    th: "✦ รับรองมาตรฐาน AUN-QA",
+    en: "✦ AUN-QA Accredited Tier-1",
+  },
+  "portal.hero.crystal.badge_employment": {
+    th: "💎 98.6% มีงานทำทันทีหลังจบ",
+    en: "💎 98.6% Career Placement",
+  },
+  "portal.hero.crystal.badge_pass": {
+    th: "⚡ Digital ID Pass & QR Engine",
+    en: "⚡ Digital ID Pass & QR Engine",
+  },
+  "portal.hero.crystal.mode_academic": {
+    th: "วิชาการ & หลักสูตร",
+    en: "Academics",
+  },
+  "portal.hero.crystal.mode_smart": {
+    th: "บริการดิจิทัล",
+    en: "Smart Campus",
+  },
+  "portal.hero.crystal.mode_admissions": {
+    th: "รับสมัคร 2569",
+    en: "Admissions",
+  },
+
   "portal.stats.curricula": { th: "หลักสูตร", en: "Curricula" },
   "portal.stats.curriculaDesc": { th: "ตรี โท เอก และวิชาชีพ", en: "Degree & Certificate tracks" },
   "portal.stats.faculty": { th: "คณาจารย์", en: "Faculty" },

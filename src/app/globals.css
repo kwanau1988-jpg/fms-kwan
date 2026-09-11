@@ -153,10 +153,75 @@
   .animate-float-slow {
     animation: float-badge 6s ease-in-out infinite;
   }
+  .perspective-1500 {
+    perspective: 1500px;
+  }
+  .animate-crystal-float {
+    animation: crystal-float 8s ease-in-out infinite;
+  }
+  .animate-magma-pulse {
+    animation: magma-pulse 3s ease-in-out infinite;
+  }
+  .animate-prism-gleam {
+    animation: prism-gleam 5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  }
+  .animate-crystal-nebula {
+    animation: crystal-nebula 9s ease-in-out infinite;
+  }
 }
 
 @keyframes tab-fade-in {
   0% { opacity: 0; transform: translateY(10px) scale(0.98); }
   100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes crystal-float {
+  0%, 100% {
+    transform: translate3d(0, 0px, 0px) rotateX(0deg) rotateY(0deg) rotateZ(0deg);
+  }
+  33% {
+    transform: translate3d(0, -14px, 15px) rotateX(1.5deg) rotateY(-2deg) rotateZ(0.8deg);
+  }
+  66% {
+    transform: translate3d(0, 8px, -10px) rotateX(-1deg) rotateY(1.5deg) rotateZ(-0.5deg);
+  }
+}
+
+@keyframes magma-pulse {
+  0%, 100% {
+    opacity: 0.85;
+    filter: drop-shadow(0 0 25px rgba(255, 170, 0, 0.75)) drop-shadow(0 0 50px rgba(255, 120, 0, 0.5));
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    filter: drop-shadow(0 0 45px rgba(255, 190, 30, 0.95)) drop-shadow(0 0 85px rgba(255, 100, 0, 0.75));
+    transform: scale(1.04);
+  }
+}
+
+@keyframes prism-gleam {
+  0%, 20% {
+    transform: translateX(-180%) translateY(-100%) rotate(35deg);
+    opacity: 0;
+  }
+  35% {
+    opacity: 0.85;
+  }
+  55%, 100% {
+    transform: translateX(250%) translateY(150%) rotate(35deg);
+    opacity: 0;
+  }
+}
+
+@keyframes crystal-nebula {
+  0%, 100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 0.75;
+  }
+  50% {
+    transform: scale(1.15) rotate(180deg);
+    opacity: 0.95;
+  }
 }
 
