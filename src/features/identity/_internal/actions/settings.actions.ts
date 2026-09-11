@@ -15,11 +15,14 @@ import { errors } from "@/shared/lib/errors";
 
 const ALLOWED_MIME_TYPES: Record<string, string> = {
   "image/png": ".png",
+  "image/x-png": ".png",
   "image/jpeg": ".jpg",
+  "image/jpg": ".jpg",
+  "image/pjpeg": ".jpg",
   "image/webp": ".webp",
   "image/svg+xml": ".svg",
 };
-const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB for flexibility
 
 import { prisma } from "@/shared/lib/infra/prisma";
 
@@ -50,7 +53,15 @@ export async function uploadLogoAction(formData: FormData): Promise<ActionResult
       throw errors.validation("settings.logoErrorEmpty", { file: ["settings.logoErrorEmpty"] });
     }
 
-    const ext = ALLOWED_MIME_TYPES[file.type];
+    let ext = ALLOWED_MIME_TYPES[file.type.toLowerCase()];
+    if (!ext && file.name) {
+      const match = file.name.match(/\.(png|jpe?g|webp|svg)$/i);
+      if (match) {
+        const raw = match[1].toLowerCase();
+        ext = raw === "jpeg" ? ".jpg" : `.${raw}`;
+      }
+    }
+
     if (!ext) {
       throw errors.validation("settings.logoErrorType", { file: ["settings.logoErrorType"] });
     }

@@ -28,7 +28,7 @@ export function SettingsForm({ initial }: { initial: TenantSettings }) {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 2 * 1024 * 1024) {
+    if (file.size > 5 * 1024 * 1024) {
       toast.error(t("settings.logoErrorSize"));
       e.target.value = "";
       return;
@@ -44,13 +44,32 @@ export function SettingsForm({ initial }: { initial: TenantSettings }) {
         toast.error(t(res.error.message));
         return;
       }
-      setForm((prev) => ({ ...prev, logoUrl: res.data.url }));
-      toast.success(t("settings.logoUploadSuccess"));
+      const newLogoUrl = res.data.url;
+      setForm((prev) => ({ ...prev, logoUrl: newLogoUrl }));
+      // Auto-save logo immediately into tenant settings
+      const saveRes = await updateSettingsAction({ ...form, logoUrl: newLogoUrl });
+      if (saveRes.ok) {
+        toast.success(t("settings.logoUploadSuccess"));
+        router.refresh();
+      } else {
+        toast.success(t("settings.logoUploadSuccess"));
+      }
     } catch {
       toast.error(t("error.internal"));
     } finally {
       setUploading(false);
       e.target.value = "";
+    }
+  }
+
+  async function handleRemoveLogo() {
+    setForm((prev) => ({ ...prev, logoUrl: "" }));
+    try {
+      await updateSettingsAction({ ...form, logoUrl: "" });
+      toast.success(t("settings.saveOk"));
+      router.refresh();
+    } catch {
+      toast.error(t("error.internal"));
     }
   }
 
@@ -91,7 +110,14 @@ export function SettingsForm({ initial }: { initial: TenantSettings }) {
                 <div className="prev">
                   {form.logoUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={form.logoUrl} alt="Logo" />
+                    <img
+                      src={form.logoUrl}
+                      alt="Logo"
+                      className="w-full h-full object-contain"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLElement).style.display = "none";
+                      }}
+                    />
                   ) : (
                     <Building2 className="w-7 h-7 text-muted-foreground" />
                   )}
@@ -125,7 +151,7 @@ export function SettingsForm({ initial }: { initial: TenantSettings }) {
                         variant="ghost"
                         size="sm"
                         disabled={uploading || pending}
-                        onClick={() => setForm((prev) => ({ ...prev, logoUrl: "" }))}
+                        onClick={handleRemoveLogo}
                         className="text-destructive hover:text-destructive hover:bg-destructive/10"
                       >
                         <Trash2 className="w-3.5 h-3.5 mr-1.5" />
