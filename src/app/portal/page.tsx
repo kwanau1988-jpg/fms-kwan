@@ -50,10 +50,8 @@ export default async function PortalHomePage() {
 
   return (
     <div className="space-y-16 pb-20">
-      {/* ─── Hero Section (Monotree Style) ─── */}
+      {/* ─── Hero Section (Fiscal Multi-Option Style) ─── */}
       <PortalHero
-        t={t}
-        isTh={isTh}
         orgName={orgName}
         curriculaCount={programs.length}
         personnelCount={keyPersonnel.length}

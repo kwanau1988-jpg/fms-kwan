@@ -12,6 +12,63 @@ export const portalMessages: Dictionary = {
   "portal.nav.signIn": { th: "เข้าสู่ระบบ", en: "Sign In" },
   "portal.nav.dashboard": { th: "ระบบจัดการ", en: "Dashboard" },
   "portal.hero.badge": { th: "✨ ยินดีต้อนรับสู่คณะวิทยาการจัดการ", en: "✨ Welcome to Faculty of Management Science" },
+  // Multi-option Hero tabs
+  "portal.hero.tab.courses": { th: "หลักสูตรและการศึกษา", en: "Degree Courses" },
+  "portal.hero.tab.services": { th: "บริการดิจิทัลอัจฉริยะ", en: "Smart Services" },
+  "portal.hero.tab.admissions": { th: "เปิดรับสมัคร & ทุน", en: "Admissions & Quota" },
+
+  // Contextual Hero for Courses
+  "portal.hero.courses.badge": { th: "✨ สำรวจหลักสูตรและการเรียนการสอนมาตรฐานสากล", en: "✨ World-Class Academic Programs & Standards" },
+  "portal.hero.courses.title_italic": { th: "พัฒนาสู่", en: "inspire" },
+  "portal.hero.courses.title_bold": { th: "ผู้นำยุคใหม่", en: "FUTURE LEADERS" },
+  "portal.hero.courses.title_line2": { th: "หลักสูตรทันสมัย", en: "MODERN CURRICULA" },
+  "portal.hero.courses.desc": {
+    th: "หลักสูตรบูรณาการศาสตร์การบริหารธุรกิจ การบัญชี นวัตกรรมเทคโนโลยี และเศรษฐศาสตร์ มุ่งเน้นการลงมือปฏิบัติจริงสู่ตลาดงานระดับสากล",
+    en: "Integrating business administration, financial technologies, digital innovation, and hands-on professional apprenticeships.",
+  },
+  "portal.hero.courses.cta_primary": { th: "สำรวจหลักสูตรการศึกษา", en: "Browse Programs" },
+  "portal.hero.courses.cta_secondary": { th: "โครงสร้างหน่วยกิต", en: "Credit Structure" },
+  "portal.hero.courses.feat1": { th: "4 ระดับการศึกษา", en: "4 Degree Levels" },
+  "portal.hero.courses.feat2": { th: "132 หน่วยกิตมาตรฐาน", en: "132 Standard Credits" },
+  "portal.hero.courses.feat3": { th: "มาตรฐาน AUN-QA", en: "AUN-QA Accredited" },
+
+  // Contextual Hero for Services
+  "portal.hero.services.badge": { th: "⚡ ระบบบริหารจัดการอัจฉริยะแบบไร้กระดาษ 100%", en: "⚡ 100% Paperless Smart Faculty Operations" },
+  "portal.hero.services.title_italic": { th: "บริการ", en: "seamless" },
+  "portal.hero.services.title_bold": { th: "ดิจิทัลอัจฉริยะ", en: "SMART PLATFORM" },
+  "portal.hero.services.title_line2": { th: "ครบวงจร", en: "CONNECTED CAMPUS" },
+  "portal.hero.services.desc": {
+    th: "ศูนย์รวมบริการสารสนเทศแบบครบวงจรสำหรับอาจารย์ บุคลากร และนิสิตนักศึกษา เช็กชื่อด้วย QR ป้องกันทุจริต จองห้องประชุม และสลิปเงินเดือนปลอดภัย",
+    en: "All-in-one digital hub featuring anti-spoof QR attendance check-in, real-time facility reservations, and encrypted e-payroll.",
+  },
+  "portal.hero.services.cta_primary": { th: "เข้าใช้งานระบบบริการ", en: "Launch Services" },
+  "portal.hero.services.cta_secondary": { th: "สแกนเช็กชื่อเข้าเรียน", en: "Scan QR Check-in" },
+  "portal.hero.services.feat1": { th: "สแกนเช็กชื่อ QR ทันที", en: "Instant QR Check-in" },
+  "portal.hero.services.feat2": { th: "จองห้อง & ยานพาหนะ", en: "Room & Vehicle Booking" },
+  "portal.hero.services.feat3": { th: "สลิปเงินเดือนออนไลน์", en: "Encrypted E-Payroll" },
+
+  // Contextual Hero for Admissions
+  "portal.hero.admissions.badge": { th: "🎯 เปิดรับสมัครนิสิต/นักศึกษาใหม่ ปีการศึกษา 2569", en: "🎯 Admissions Open for Academic Year 2026" },
+  "portal.hero.admissions.title_italic": { th: "ก้าวสู่อนาคต", en: "unlock" },
+  "portal.hero.admissions.title_bold": { th: "สมัครเข้าศึกษา", en: "YOUR AMBITION" },
+  "portal.hero.admissions.title_line2": { th: "รับโควตาพิเศษ", en: "DIRECT INTAKE" },
+  "portal.hero.admissions.desc": {
+    th: "เปิดรับสมัครผ่านระบบออนไลน์รอบโควตาและรอบคัดเลือกตรง พร้อมทุนการศึกษาสนับสนุน สิ่งอำนวยความสะดวกครบครัน และหอพักนักศึกษา",
+    en: "Apply directly online for quota rounds and merit scholarships, complete with modern campus housing and research facilities.",
+  },
+  "portal.hero.admissions.cta_primary": { th: "สมัครเข้าศึกษาออนไลน์", en: "Apply for Admission" },
+  "portal.hero.admissions.cta_secondary": { th: "สอบถามรายละเอียดทุน", en: "Scholarship Inquiry" },
+  "portal.hero.admissions.feat1": { th: "350 ที่นั่งรอบตรง", en: "350 Direct Seats" },
+  "portal.hero.admissions.feat2": { th: "50 ทุนการศึกษาเรียนดี", en: "50 Merit Scholarships" },
+  "portal.hero.admissions.feat3": { th: "ทราบผลสัมภาษณ์ใน 3 วัน", en: "3-Day Fast Decision" },
+
+  // Card Extras
+  "portal.hero.card.degreeBBA": { th: "บริหารธุรกิจบัณฑิต (บธ.บ.)", en: "B.B.A. Business Administration" },
+  "portal.hero.card.marketingTrack": { th: "การตลาดดิจิทัลและนวัตกรรมธุรกิจ", en: "Digital Marketing & Innovation" },
+  "portal.hero.card.enrolled": { th: "+1,250 นิสิตในหลักสูตร", en: "+1,250 Active Students" },
+  "portal.hero.card.admissionsLive": { th: "เปิดรับสมัคร TCAS รอบตรง", en: "Direct Intake Open" },
+  "portal.hero.card.seatsAvailable": { th: "คงเหลือ 78 ที่นั่งสุดท้าย", en: "78 Seats Remaining" },
+
   "portal.hero.title1": { th: "ขับเคลื่อนศักยภาพสู่", en: "Empowering Next-Gen" },
   "portal.hero.title2": { th: "ด้วยนวัตกรรมดิจิทัล", en: "with Smart Innovation" },
   "portal.hero.accent": { th: "ผู้นำธุรกิจแห่งอนาคต", en: "Business Leaders" },

@@ -147,5 +147,16 @@
   .animate-float-badge {
     animation: float-badge 4s ease-in-out infinite;
   }
+  .animate-tab-in {
+    animation: tab-fade-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  .animate-float-slow {
+    animation: float-badge 6s ease-in-out infinite;
+  }
+}
+
+@keyframes tab-fade-in {
+  0% { opacity: 0; transform: translateY(10px) scale(0.98); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
 }
 
