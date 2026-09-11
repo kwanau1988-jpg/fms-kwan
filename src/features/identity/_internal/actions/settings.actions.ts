@@ -68,6 +68,20 @@ export async function uploadLogoAction(formData: FormData): Promise<ActionResult
     const filePath = path.join(uploadDir, filename);
 
     const buffer = Buffer.from(await file.arrayBuffer());
+
+    // Security check: Prevent Stored XSS via malicious SVG files
+    if (ext === ".svg") {
+      const content = buffer.toString("utf8");
+      if (
+        /<script[\s>]/i.test(content) ||
+        /javascript:/i.test(content) ||
+        /on\w+\s*=/i.test(content) ||
+        /<foreignObject[\s>]/i.test(content)
+      ) {
+        throw errors.validation("settings.logoErrorType", { file: ["settings.logoErrorType"] });
+      }
+    }
+
     await writeFile(filePath, buffer);
 
     return { url: `/uploads/logos/${filename}` };

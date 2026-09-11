@@ -1,0 +1,63 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: fms-db-production
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: fms_production_db_secret_pass_2026
+      POSTGRES_DB: ums_dev
+    ports:
+      # Expose to 5433 on host to avoid port conflicts with any existing local Postgres
+      - "5433:5432"
+    volumes:
+      - pgdata_production:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ums_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+    networks:
+      - fms_network
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: fms-app-production
+    restart: always
+    environment:
+      DATABASE_URL: postgresql://postgres:fms_production_db_secret_pass_2026@db:5432/ums_dev
+      AUTH_SECRET: b63c7e19d2a4f508e9a2b1c4d7f8e0a3b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0
+      AUTH_TRUST_HOST: "true"
+      AUTH_URL: http://localhost:3010
+      APP_URL: http://localhost:3010
+      NODE_ENV: production
+      PORT: 3010
+      AUTO_SEED: "true"
+    ports:
+      - "3010:3010"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3010/portal || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    volumes:
+      - uploads_production:/app/public/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - fms_network
+
+volumes:
+  pgdata_production:
+    name: fms_pgdata_production
+  uploads_production:
+    name: fms_uploads_production
+
+networks:
+  fms_network:
+    name: fms_network
