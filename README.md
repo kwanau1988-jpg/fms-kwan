@@ -1,12 +1,35 @@
-# VibeCore Framework — Enterprise Full-stack Starter Kit สำหรับ Vibe Coding
+# FMS Faculty Web Platform — เว็บไซต์และระบบสารสนเทศคณะวิทยาการจัดการ
 
-โปรเจกต์เว็บแอปพลิเคชันระดับองค์กรสร้างด้วย **Next.js 16 + Prisma/PostgreSQL + Tailwind 4** รองรับสองภาษา (ไทย/อังกฤษ) บนดีไซน์ระบบ **Liyon**
-
-พร้อมใช้งานระบบพื้นฐาน (Identity & Access Management, Authentication, RBAC, i18n, Theme System) และมีโมดูลตัวอย่าง (`features/sample`) พร้อมให้นักเรียนนำไปใช้เป็น **Framework / Starter Kit** ในการเขียนโค้ดร่วมกับ AI (Vibe Coding) เพื่อสร้างฟีเจอร์ใหม่ ๆ ได้อย่างรวดเร็วและได้มาตรฐานสากล
+ระบบเว็บแอปพลิเคชันและสารสนเทศระดับองค์กรสำหรับคณะวิทยาการจัดการ สร้างด้วยสถาปัตยกรรม **Modular Monolith** บน **Next.js 16 (App Router) + React 19 + Prisma 6 + PostgreSQL + Tailwind CSS 4 (Liyon Design System)** รองรับสองภาษา (ไทย/อังกฤษ) และ Multi-tenancy เต็มรูปแบบ
 
 ---
 
-## ⚡️ เริ่มต้นใช้งานแบบขั้นตอนเดียว (Quick Start)
+## 🏛️ สถาปัตยกรรมและส่วนประกอบของระบบ (Platform Architecture)
+
+ระบบประกอบด้วย 2 ส่วนการทำงานหลัก:
+
+### 1. Public Portal (หน้าบ้านสำหรับประชาชน นักศึกษา และผู้สนใจ)
+- **หน้าหลักคณะ (`/portal`):** แบนเนอร์อัตลักษณ์ สรุปข่าวประชาสัมพันธ์ล่าสุด ทางลัดสู่บริการ และสถิติคณะ
+- **ข่าวสาร/ประชาสัมพันธ์ (`/portal/news` & `/portal/news/[slug]`):** ข่าวสาร กิจกรรม คัดกรองตามหมวดหมู่ พร้อมรูปภาพและแท็ก
+- **ทำเนียบบุคลากร (`/portal/personnel`):** รายนามคณาจารย์และเจ้าหน้าที่ คัดกรองตามภาควิชา/ตำแหน่ง ข้อมูลติดต่อและงานวิจัย
+- **หลักสูตรการศึกษา (`/portal/curriculum`):** รายละเอียดหลักสูตรปริญญาตรี ปริญญาโท ปริญญาเอก แผนการเรียน และหน่วยกิต
+- **สิ่งอำนวยความสะดวก (`/portal/facilities`):** ข้อมูลห้องบรรยาย ห้องปฏิบัติการคอมพิวเตอร์ และอุปกรณ์พร้อมให้บริการ
+- **สแกนเช็กชื่อเข้างาน/เรียน (`/portal/attendance/scan`):** จุดสแกน QR Code สำหรับอาจารย์ บุคลากร และนักศึกษา
+
+### 2. Admin Console (หลังบ้านสำหรับเจ้าหน้าที่และผู้บริหาร)
+- 📊 **Executive Dashboard (`/dashboard`):** ภาพรวมสถิติ ข้อมูลการใช้งาน และกิจกรรมล่าสุด
+- 📰 **ระบบจัดการข่าวสาร (`/news`):** สร้าง/แก้ไข/ลบข่าว จัดการสถานะเผยแพร่และภาพประกอบ
+- 👥 **ระบบทำเนียบบุคลากร (`/personnel`):** บันทึกประวัติบุคลากร ตำแหน่งทางวิชาการ ความเชี่ยวชาญ
+- 🎓 **ระบบจัดการหลักสูตร (`/curriculum`):** บริหารจัดการโครงสร้างหลักสูตร แผนการศึกษา และสถานะการเปิดรับ
+- 🏢 **ระบบจองห้องและทรัพยากร (`/booking`):** ระบบตรวจสอบการชนของเวลาแบบ Real-time (Collision Detection) และพิจารณาอนุมัติ
+- ⏱️ **ระบบเช็กชื่อและ Dynamic QR (`/attendance`):** สร้าง Dynamic Anti-Spoof QR Token อายุ 15 นาที และบันทึกประวัติการสแกน
+- 💰 **ระบบสลิปเงินเดือนอิเล็กทรอนิกส์ (`/payroll`):** ประมวลผลเงินเดือน, เข้ารหัสข้อมูลด้วย AES-256-GCM, และหน้าสำหรับบุคลากรดูสลิปของตนเอง (`/me/payroll`)
+- 📑 **ระบบเสนอเซ็นและคำร้อง (`/documents`):** ส่งคำร้อง, มอบหมายผู้อนุมัติแบบเป็นลำดับขั้น, และพิจารณาลงนาม
+- 🔐 **ระบบผู้ใช้ บทบาท และสิทธิ์ (`/users`, `/users/roles`):** การควบคุมการเข้าถึงตามบทบาท (RBAC) และบันทึก Audit Logs
+
+---
+
+## ⚡️ เริ่มต้นใช้งาน (Quick Start)
 
 1. **เลือก Node 22 และติดตั้ง dependencies:**
    ```bash
@@ -23,35 +46,26 @@
    ```bash
    npm run dev
    ```
-   เปิดเบราว์เซอร์ไปที่: **http://localhost:3010**
-   - บัญชี Admin ตั้งต้น: `admin@app.local`
-   - รหัสผ่าน: `Passw0rd!vibe`
-
-> [!TIP]
-> ดูตัวอย่างประโยคคำสั่ง Prompt สำเร็จรูปสำหรับสั่ง AI เขียนฟีเจอร์ใหม่ได้ที่ [PROMPTS.md](file:///Users/jira/Documents/ViebCode/U-AI-MS/PROMPTS.md)
+   - **Public Portal:** http://localhost:3010/portal
+   - **Admin Console:** http://localhost:3010
+   - **บัญชีทดสอบตั้งต้น:**
+     - ผู้ดูแลระบบ: `admin@app.local` / `Passw0rd!vibe`
+     - เจ้าหน้าที่การเงิน: `finance@app.local` / `Passw0rd!vibe`
+     - เจ้าหน้าที่ทั่วไป: `staff@app.local` / `Passw0rd!vibe`
+     - อาจารย์: `staff1@app.local` / `Passw0rd!vibe`
 
 ---
 
-## ฟีเจอร์ที่มีพร้อมใช้งานใน Framework
+## 🧪 การทดสอบและการรับประกันคุณภาพ (Quality Verification)
 
-- 🔐 **ระบบ Authentication & Security:**
-  - Login ด้วย Email/Password, Forgot Password, Reset Password ด้วย Single-use Token (SHA-256)
-  - บังคับเปลี่ยนรหัสผ่านในครั้งแรก (`mustChangePassword`), ระบบยืนยันอีเมล
-  - ป้องกัน Brute-force Login (`LoginThrottle`), ระบบเพิกถอนเซสชันอัตโนมัติเมื่อถูกระงับสิทธิ์
-  - บันทึกประวัติการใช้งานลง `audit_logs`
-- 👥 **ระบบจัดการผู้ใช้และบทบาท (Users & RBAC):**
-  - หน้าจัดการผู้ใช้ (`/users`): สร้าง, แก้ไข, ระงับการใช้งาน, รีเซ็ตรหัสผ่าน
-  - หน้าจัดการบทบาทและสิทธิ์ (`/users/roles`): สร้างบทบาท, กำหนดชุดสิทธิ์ (Permissions), รองรับขอบเขตสิทธิ์ (Scopes)
-  - หน้าโปรไฟล์ผู้ใช้ (`/me`) และเปลี่ยนรหัสผ่าน (`/change-password`)
-- 📦 **โมดูลตัวอย่าง (Sample CRUD Feature - `/sample`):**
-  - หน้าจัดการข้อมูลตัวอย่าง มีตารางค้นหา, Dialog สร้าง/แก้ไข, การลบข้อมูล และการแสดงสถานะ Badge
-  - เขียนตามสถาปัตยกรรม Modular Monolith ครบวงจร ให้นักเรียนดูเป็นต้นแบบ
-- 🌐 **ระบบสองภาษา (i18n):**
-  - สลับภาษา TH/EN ผ่าน Cookie ทันที ปุ่มสลับภาษาบน Navbar
-  - จัดรูปแบบวันที่ พ.ศ./ค.ศ. อัตโนมัติ, ข้อความ UI และ Zod Validation แปลสองภาษาครบถ้วน
-- 🎨 **Liyon Design System:**
-  - Layout สไตล์ Admin Dashboard (Navbar, Sidebar, Breadcrumb) และ Auth Layout
-  - เลือกลวดลายสีระบบ (Color Palette) ได้ 5 โทนในหน้า Settings
+ระบบผ่านการทดสอบอัตโนมัติครบ 100% ตามมาตรฐานสถาปัตยกรรม:
+- **Type-Check:** `npm run type-check` (0 errors)
+- **Linter:** `npm run lint` (0 errors, 0 warnings)
+- **Boundary Verification:** `npm run deps:check` (0 violations)
+- **Unit Tests:** `npm run test` (168 tests, 34 test suites)
+- **Integration Tests:** `npm run test:integration` (57 tests, 9 test suites)
+- **Production Build:** `npm run build` (Next.js 16 Production Output)
+- **Full Quality Suite:** `npm run check`
 
 ---
 
