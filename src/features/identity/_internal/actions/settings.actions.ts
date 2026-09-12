@@ -5,8 +5,8 @@ import { getLocale } from "@/shared/lib/i18n/server";
 import { zodErrorMap } from "@/shared/lib/i18n/zod-locale";
 import { P } from "../../permissions";
 import { requirePermission } from "../rbac";
-import { updateSettingsSchema, testSmtpSchema } from "../validations/settings";
-import { getTenantSettings, updateTenantSettings, getTenantRawSmtp, MASKED_PASSWORD, type TenantSettings } from "../services/tenant.service";
+import { updateSettingsSchema, testSmtpSchema, testGeminiSchema } from "../validations/settings";
+import { getTenantSettings, updateTenantSettings, getTenantRawSmtp, getTenantRawGeminiConfig, MASKED_PASSWORD, type TenantSettings } from "../services/tenant.service";
 
 import { writeFile, mkdir } from "node:fs/promises";
 import path from "node:path";
@@ -157,6 +157,52 @@ export async function testSmtpAction(input: unknown): Promise<ActionResult<{ suc
           </div>
         `,
       });
+      return { success: true };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      throw errors.internal(msg);
+    }
+  });
+}
+
+export async function testGeminiAction(input: unknown): Promise<ActionResult<{ success: boolean; message?: string }>> {
+  return runAction(async () => {
+    const ctx = await requirePermission(P.settingsManage);
+    const parsed = testGeminiSchema.parse(input, { error: zodErrorMap(await getLocale()) });
+    const { apiKey, model } = parsed;
+
+    let keyToUse = apiKey;
+    if (keyToUse === MASKED_PASSWORD || !keyToUse) {
+      const cfg = await getTenantRawGeminiConfig(ctx.tenantId);
+      keyToUse = cfg?.apiKey || "";
+    }
+
+    if (!keyToUse) {
+      throw errors.validation("settings.geminiNoKey", { apiKey: ["settings.geminiNoKey"] });
+    }
+
+    const selectedModel = model || "gemini-2.5-flash";
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(selectedModel)}:generateContent?key=${encodeURIComponent(keyToUse)}`;
+
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [{ text: "Hello, reply with 'OK' only." }],
+            },
+          ],
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        const errMsg = (errorData as { error?: { message?: string } })?.error?.message || `HTTP ${response.status}: ${response.statusText}`;
+        throw new Error(errMsg);
+      }
+
       return { success: true };
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);

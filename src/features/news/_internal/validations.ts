@@ -17,5 +17,11 @@ export const updateNewsArticleSchema = createNewsArticleSchema.extend({
   id: z.string().uuid(),
 });
 
+export const translateNewsInputSchema = z.object({
+  titleTh: z.string().trim().min(1),
+  contentTh: z.string().trim().min(1),
+});
+
 export type CreateNewsArticleInput = z.infer<typeof createNewsArticleSchema>;
 export type UpdateNewsArticleInput = z.infer<typeof updateNewsArticleSchema>;
+export type TranslateNewsInput = z.infer<typeof translateNewsInputSchema>;

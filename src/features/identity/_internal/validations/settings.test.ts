@@ -64,5 +64,20 @@ describe("updateSettingsSchema", () => {
       expect(res.data.smtp?.port).toBe(465);
     }
   });
+
+  it("ยอมรับการตั้งค่า Google Gemini AI", () => {
+    const res = updateSettingsSchema.safeParse({
+      ...base,
+      gemini: {
+        apiKey: "AIzaSyFakeKey123",
+        model: "gemini-2.5-flash",
+      },
+    });
+    expect(res.success).toBe(true);
+    if (res.success) {
+      expect(res.data.gemini?.apiKey).toBe("AIzaSyFakeKey123");
+      expect(res.data.gemini?.model).toBe("gemini-2.5-flash");
+    }
+  });
 });
 

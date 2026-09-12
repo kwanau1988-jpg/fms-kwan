@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Plus, Edit2, Trash2, Pin, AlertCircle, Newspaper } from "lucide-react";
+import { Plus, Edit2, Trash2, Pin, AlertCircle, Newspaper, Sparkles, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useT, useLocale } from "@/shared/lib/i18n/client";
 import { formatDate } from "@/shared/lib/format";
@@ -12,6 +12,7 @@ import {
   updateNewsArticleAction,
   deleteNewsArticleAction,
   getNewsArticlesAction,
+  translateNewsWithGeminiAction,
 } from "@/features/news/actions";
 
 interface Props {
@@ -39,6 +40,7 @@ export function NewsClient({ initialItems, canManage }: Props) {
   const [coverImageUrl, setCoverImageUrl] = useState("");
   const [isPinned, setIsPinned] = useState(false);
   const [status, setStatus] = useState<"DRAFT" | "PUBLISHED" | "ARCHIVED">("PUBLISHED");
+  const [isTranslating, setIsTranslating] = useState(false);
 
   const openCreateDialog = () => {
     setEditingItem(null);
@@ -69,6 +71,36 @@ export function NewsClient({ initialItems, canManage }: Props) {
   const refreshItems = async () => {
     const res = await getNewsArticlesAction();
     if (res.ok) setItems(res.data);
+  };
+
+  const handleAiTranslate = async () => {
+    if (!titleTh.trim()) {
+      toast.error(t("news.aiRequireThaiTitle"));
+      return;
+    }
+    if (!contentTh.trim()) {
+      toast.error(t("news.aiRequireThaiContent"));
+      return;
+    }
+
+    setIsTranslating(true);
+    try {
+      const res = await translateNewsWithGeminiAction({
+        titleTh: titleTh.trim(),
+        contentTh: contentTh.trim(),
+      });
+      if (res.ok) {
+        if (res.data.titleEn) setTitleEn(res.data.titleEn);
+        if (res.data.contentEn) setContentEn(res.data.contentEn);
+        toast.success(t("news.aiTranslateSuccess"));
+      } else {
+        toast.error(res.error.message || t("common.error"));
+      }
+    } catch {
+      toast.error(t("common.error"));
+    } finally {
+      setIsTranslating(false);
+    }
   };
 
   const handleSave = () => {
@@ -239,6 +271,7 @@ export function NewsClient({ initialItems, canManage }: Props) {
             </h2>
 
             <div className="space-y-4">
+              {/* Thai Section */}
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-foreground">{t("news.titleTh")} *</label>
                 <input
@@ -251,6 +284,41 @@ export function NewsClient({ initialItems, canManage }: Props) {
               </div>
 
               <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-foreground">{t("news.contentTh")} *</label>
+                <textarea
+                  rows={4}
+                  value={contentTh}
+                  onChange={(e) => setContentTh(e.target.value)}
+                  placeholder="เนื้อหาข่าวภาษาไทย..."
+                  className="w-full px-3.5 py-2 text-sm rounded-xl border border-border bg-background focus:outline-hidden focus:ring-2 focus:ring-brand"
+                />
+              </div>
+
+              {/* Gemini AI Translation Bar */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3.5 bg-gradient-to-r from-brand/10 via-brand/5 to-transparent border border-brand/20 rounded-2xl">
+                <div className="text-xs text-muted-foreground flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-brand shrink-0" />
+                  <span>{t("news.aiGenerateHint")}</span>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={isTranslating || isPending}
+                  onClick={handleAiTranslate}
+                  className="gap-2 border-brand/30 text-brand hover:bg-brand/10 shrink-0 font-medium rounded-xl"
+                >
+                  {isTranslating ? (
+                    <Loader2 className="w-4 h-4 animate-spin text-brand" />
+                  ) : (
+                    <Sparkles className="w-4 h-4 text-brand" />
+                  )}
+                  <span>{isTranslating ? t("news.aiTranslating") : t("news.aiTranslateBtn")}</span>
+                </Button>
+              </div>
+
+              {/* English Section */}
+              <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-foreground">{t("news.titleEn")} *</label>
                 <input
                   type="text"
@@ -261,7 +329,19 @@ export function NewsClient({ initialItems, canManage }: Props) {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-foreground">{t("news.contentEn")} *</label>
+                <textarea
+                  rows={4}
+                  value={contentEn}
+                  onChange={(e) => setContentEn(e.target.value)}
+                  placeholder="News content in English..."
+                  className="w-full px-3.5 py-2 text-sm rounded-xl border border-border bg-background focus:outline-hidden focus:ring-2 focus:ring-brand"
+                />
+              </div>
+
+              {/* Publishing & Media Section */}
+              <div className="grid grid-cols-2 gap-4 pt-2 border-t border-border/50">
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-foreground">{t("news.category")}</label>
                   <select
@@ -312,28 +392,6 @@ export function NewsClient({ initialItems, canManage }: Props) {
                 <label htmlFor="isPinned" className="text-xs font-medium text-foreground cursor-pointer">
                   {t("news.isPinned")} (แสดงบนส่วนบนสุดของหน้าแรก)
                 </label>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-foreground">{t("news.contentTh")} *</label>
-                <textarea
-                  rows={4}
-                  value={contentTh}
-                  onChange={(e) => setContentTh(e.target.value)}
-                  placeholder="เนื้อหาข่าวภาษาไทย..."
-                  className="w-full px-3.5 py-2 text-sm rounded-xl border border-border bg-background focus:outline-hidden focus:ring-2 focus:ring-brand"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-foreground">{t("news.contentEn")} *</label>
-                <textarea
-                  rows={4}
-                  value={contentEn}
-                  onChange={(e) => setContentEn(e.target.value)}
-                  placeholder="News content in English..."
-                  className="w-full px-3.5 py-2 text-sm rounded-xl border border-border bg-background focus:outline-hidden focus:ring-2 focus:ring-brand"
-                />
               </div>
             </div>
 

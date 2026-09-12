@@ -3,7 +3,7 @@ import { prisma, type Db } from "@/shared/lib/infra/prisma";
 import { DEFAULT_PALETTE, isPalette, type PaletteId } from "@/shared/lib/palette";
 import { errors } from "@/shared/lib/errors";
 import { writeAudit } from "../audit";
-import type { SmtpSettings, UpdateSettingsInput } from "../validations/settings";
+import type { SmtpSettings, GeminiSettings, UpdateSettingsInput } from "../validations/settings";
 
 export const MASKED_PASSWORD = "••••••••••••••••";
 
@@ -14,6 +14,7 @@ export interface TenantSettings {
   logoUrl: string | null;
   palette: PaletteId;
   smtp: SmtpSettings;
+  gemini: GeminiSettings;
 }
 
 export const DEFAULT_SMTP: SmtpSettings = {
@@ -24,12 +25,18 @@ export const DEFAULT_SMTP: SmtpSettings = {
   port: 465,
 };
 
+export const DEFAULT_GEMINI: GeminiSettings = {
+  apiKey: "",
+  model: "gemini-2.5-flash",
+};
+
 async function readTenantSettings(tenantId: string, db: Db): Promise<TenantSettings> {
   const t = await db.tenant.findUnique({ where: { id: tenantId } });
   if (!t) throw errors.not_found();
-  const rawSettings = (t.settings as { palette?: unknown; smtp?: Partial<SmtpSettings> }) || {};
+  const rawSettings = (t.settings as { palette?: unknown; smtp?: Partial<SmtpSettings>; gemini?: Partial<GeminiSettings> }) || {};
   const p = rawSettings.palette;
   const rawSmtp = rawSettings.smtp || {};
+  const rawGemini = rawSettings.gemini || {};
 
   const smtp: SmtpSettings = {
     enabled: Boolean(rawSmtp.enabled),
@@ -39,6 +46,11 @@ async function readTenantSettings(tenantId: string, db: Db): Promise<TenantSetti
     port: rawSmtp.port === 587 ? 587 : 465,
   };
 
+  const gemini: GeminiSettings = {
+    apiKey: rawGemini.apiKey ? MASKED_PASSWORD : "",
+    model: typeof rawGemini.model === "string" && rawGemini.model ? rawGemini.model : "gemini-2.5-flash",
+  };
+
   return {
     code: t.code,
     nameTh: t.nameTh,
@@ -46,6 +58,7 @@ async function readTenantSettings(tenantId: string, db: Db): Promise<TenantSetti
     logoUrl: t.logoUrl,
     palette: isPalette(p) ? p : DEFAULT_PALETTE,
     smtp,
+    gemini,
   };
 }
 
@@ -60,14 +73,25 @@ export async function getTenantRawSmtp(tenantId: string): Promise<SmtpSettings |
   return rawSettings.smtp;
 }
 
-/** เก็บคีย์อื่น ๆ ใน settings JSON ไว้ทั้งหมด — merge เฉพาะ palette และ smtp ที่เปลี่ยน ไม่ทับทั้งก้อน */
+export async function getTenantRawGeminiConfig(tenantId: string): Promise<{ apiKey: string; model: string } | null> {
+  const t = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { settings: true } });
+  const rawSettings = (t?.settings as { gemini?: GeminiSettings }) || {};
+  const key = rawSettings.gemini?.apiKey || process.env.GEMINI_API_KEY || "";
+  if (!key) return null;
+  return {
+    apiKey: key,
+    model: rawSettings.gemini?.model || "gemini-2.5-flash",
+  };
+}
+
+/** เก็บคีย์อื่น ๆ ใน settings JSON ไว้ทั้งหมด — merge เฉพาะ palette, smtp และ gemini ที่เปลี่ยน ไม่ทับทั้งก้อน */
 export async function updateTenantSettings(input: { tenantId: string; actorId: string } & UpdateSettingsInput): Promise<void> {
   await prisma.$transaction(async (tx) => {
     // อ่านผ่าน tx เดียวกัน ไม่ใช่ client กลาง — ไม่งั้นทรานแซกชันนี้กินคอนเนกชันจากพูลเพิ่มอีกเส้นเพื่ออ่าน
     // ค่าเดิม และค่าที่อ่านได้ก็อยู่นอกสแนปช็อตของทรานแซกชัน (ค่า before ของ audit อาจไม่ตรงกับที่กำลังจะทับ)
     const before = await readTenantSettings(input.tenantId, tx);
     const t = await tx.tenant.findUniqueOrThrow({ where: { id: input.tenantId }, select: { settings: true } });
-    const currentSettings = (t.settings as { palette?: unknown; smtp?: SmtpSettings }) || {};
+    const currentSettings = (t.settings as { palette?: unknown; smtp?: SmtpSettings; gemini?: GeminiSettings }) || {};
 
     let resolvedSmtp: SmtpSettings | undefined = undefined;
     if (input.smtp) {
@@ -85,10 +109,24 @@ export async function updateTenantSettings(input: { tenantId: string; actorId: s
       };
     }
 
+    let resolvedGemini: GeminiSettings | undefined = undefined;
+    if (input.gemini) {
+      const existingApiKey = currentSettings.gemini?.apiKey || "";
+      const apiKeyToSave = input.gemini.apiKey === MASKED_PASSWORD || !input.gemini.apiKey
+        ? existingApiKey
+        : input.gemini.apiKey;
+
+      resolvedGemini = {
+        apiKey: apiKeyToSave,
+        model: input.gemini.model || "gemini-2.5-flash",
+      };
+    }
+
     const nextSettings = {
       ...currentSettings,
       palette: input.palette,
       ...(resolvedSmtp !== undefined ? { smtp: resolvedSmtp } : {}),
+      ...(resolvedGemini !== undefined ? { gemini: resolvedGemini } : {}),
     };
 
     await tx.tenant.update({
@@ -108,7 +146,11 @@ export async function updateTenantSettings(input: { tenantId: string; actorId: s
       entity: "tenant",
       entityId: input.tenantId,
       before,
-      after: { ...input, smtp: resolvedSmtp ? { ...resolvedSmtp, appPassword: MASKED_PASSWORD } : undefined },
+      after: {
+        ...input,
+        smtp: resolvedSmtp ? { ...resolvedSmtp, appPassword: resolvedSmtp.appPassword ? MASKED_PASSWORD : "" } : undefined,
+        gemini: resolvedGemini ? { ...resolvedGemini, apiKey: resolvedGemini.apiKey ? MASKED_PASSWORD : "" } : undefined,
+      },
     }, tx);
   });
 }

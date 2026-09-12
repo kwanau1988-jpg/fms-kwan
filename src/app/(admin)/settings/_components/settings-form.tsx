@@ -2,13 +2,13 @@
 import { useState, useRef, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Upload, Trash2, Loader2, Building2, Eye, EyeOff, Mail, Send, KeyRound, ExternalLink } from "lucide-react";
+import { Upload, Trash2, Loader2, Building2, Eye, EyeOff, Mail, Send, KeyRound, ExternalLink, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { LiyonCard, LiyonField, PalettePicker } from "@/shared/components/liyon";
 import { useT } from "@/shared/lib/i18n/client";
 import type { PaletteId } from "@/shared/lib/palette";
 import type { TenantSettings } from "@/features/identity";
-import { updateSettingsAction, uploadLogoAction, testSmtpAction } from "@/features/identity/actions";
+import { updateSettingsAction, uploadLogoAction, testSmtpAction, testGeminiAction } from "@/features/identity/actions";
 
 export function SettingsForm({ initial }: { initial: TenantSettings }) {
   const t = useT();
@@ -26,10 +26,16 @@ export function SettingsForm({ initial }: { initial: TenantSettings }) {
       fromName: "",
       port: 465,
     },
+    gemini: initial.gemini ?? {
+      apiKey: "",
+      model: "gemini-2.5-flash",
+    },
   });
   const [showPassword, setShowPassword] = useState(false);
+  const [showGeminiKey, setShowGeminiKey] = useState(false);
   const [testEmail, setTestEmail] = useState("");
   const [testingSmtp, setTestingSmtp] = useState(false);
+  const [testingGemini, setTestingGemini] = useState(false);
   const [errors, setErrors] = useState<Record<string, string[]>>({});
   const [uploading, setUploading] = useState(false);
   const [pending, start] = useTransition();
@@ -118,6 +124,30 @@ export function SettingsForm({ initial }: { initial: TenantSettings }) {
       toast.error(t("error.internal"));
     } finally {
       setTestingSmtp(false);
+    }
+  }
+
+  async function handleTestGemini() {
+    if (!form.gemini.apiKey) {
+      toast.error(t("settings.geminiNoKey"));
+      return;
+    }
+
+    setTestingGemini(true);
+    try {
+      const res = await testGeminiAction({
+        apiKey: form.gemini.apiKey,
+        model: form.gemini.model,
+      });
+      if (res.ok) {
+        toast.success(t("settings.geminiTestSuccess"));
+      } else {
+        toast.error(t("settings.geminiTestFailed", { reason: res.error.message }));
+      }
+    } catch {
+      toast.error(t("error.internal"));
+    } finally {
+      setTestingGemini(false);
     }
   }
 
@@ -350,6 +380,95 @@ export function SettingsForm({ initial }: { initial: TenantSettings }) {
                 </div>
               </>
             )}
+          </div>
+        </LiyonCard>
+
+        {/* Google Gemini AI Configuration Card */}
+        <LiyonCard>
+          <h2>{t("settings.geminiTitle")}</h2>
+          <p>{t("settings.geminiDesc")}</p>
+          <div className="fields">
+            {/* Gemini Help Box */}
+            <div className="bg-muted/40 border border-border/70 rounded-lg p-3 text-xs space-y-1 text-muted-foreground my-2">
+              <div className="font-semibold text-foreground flex items-center gap-1.5 pb-0.5">
+                <Sparkles className="w-3.5 h-3.5 text-brand" />
+                {t("settings.geminiHelpTitle")}
+              </div>
+              <p>{t("settings.geminiHelpStep1")}</p>
+              <p>
+                {t("settings.geminiHelpStep2")}{" "}
+                <a
+                  href="https://aistudio.google.com/app/apikey"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-brand underline hover:opacity-80 inline-flex items-center gap-0.5 font-medium"
+                >
+                  aistudio.google.com/app/apikey
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              </p>
+              <p>{t("settings.geminiHelpStep3")}</p>
+            </div>
+
+            <LiyonField label={t("settings.geminiApiKey")} htmlFor="s-gemini-key" hint={t("settings.geminiApiKeyHint")}>
+              <div className="relative flex items-center">
+                <input
+                  id="s-gemini-key"
+                  type={showGeminiKey ? "text" : "password"}
+                  placeholder="AIzaSy..."
+                  value={form.gemini.apiKey}
+                  onChange={(e) => setForm({ ...form, gemini: { ...form.gemini, apiKey: e.target.value } })}
+                  className="pr-10 w-full"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowGeminiKey(!showGeminiKey)}
+                  className="absolute right-2.5 p-1 text-muted-foreground hover:text-foreground"
+                  title={showGeminiKey ? "Hide key" : "Show key"}
+                >
+                  {showGeminiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </LiyonField>
+
+            <LiyonField label={t("settings.geminiModel")} htmlFor="s-gemini-model">
+              <select
+                id="s-gemini-model"
+                value={form.gemini.model}
+                onChange={(e) => setForm({ ...form, gemini: { ...form.gemini, model: e.target.value } })}
+                className="w-full bg-background border border-input rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+              >
+                <option value="gemini-2.5-flash">Gemini 2.5 Flash (แนะนำ - รวดเร็วและแม่นยำสูง)</option>
+                <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+                <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
+                <option value="gemini-1.5-pro">Gemini 1.5 Pro (งานวิชาการเชิงลึก)</option>
+              </select>
+            </LiyonField>
+
+            {/* Inline Test Gemini Tool */}
+            <div className="mt-3 pt-3 border-t border-border space-y-2">
+              <label className="text-xs font-semibold flex items-center gap-1.5 text-foreground">
+                <Sparkles className="w-3.5 h-3.5 text-brand" />
+                {t("settings.geminiTestTitle")}
+              </label>
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={testingGemini || !form.gemini.apiKey}
+                  onClick={handleTestGemini}
+                  className="shrink-0"
+                >
+                  {testingGemini ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
+                  ) : (
+                    <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+                  )}
+                  {testingGemini ? t("settings.geminiTesting") : t("settings.geminiTestBtn")}
+                </Button>
+              </div>
+            </div>
           </div>
         </LiyonCard>
 

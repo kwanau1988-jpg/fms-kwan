@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { createNewsArticleSchema, updateNewsArticleSchema } from "./validations";
+import { createNewsArticleSchema, updateNewsArticleSchema, translateNewsInputSchema } from "./validations";
 
 describe("news validations", () => {
   it("validate createNewsArticleSchema สำเร็จเมื่อข้อมูลครบถ้วน", () => {
@@ -60,6 +60,32 @@ describe("news validations", () => {
       updateNewsArticleSchema.parse({
         ...valid,
         id: "not-a-uuid",
+      }),
+    ).toThrow();
+  });
+
+  it("validate translateNewsInputSchema สำเร็จเมื่อระบุ titleTh และ contentTh", () => {
+    const valid = {
+      titleTh: "เปิดรับสมัครอาจารย์ใหม่",
+      contentTh: "คณะเปิดรับสมัครอาจารย์ประจำ 2 อัตรา...",
+    };
+    const parsed = translateNewsInputSchema.parse(valid);
+    expect(parsed.titleTh).toBe("เปิดรับสมัครอาจารย์ใหม่");
+    expect(parsed.contentTh).toBe("คณะเปิดรับสมัครอาจารย์ประจำ 2 อัตรา...");
+  });
+
+  it("validate translateNewsInputSchema ล้มเหลวเมื่อข้อความเป็นค่าว่าง", () => {
+    expect(() =>
+      translateNewsInputSchema.parse({
+        titleTh: "   ",
+        contentTh: "เนื้อหา",
+      }),
+    ).toThrow();
+
+    expect(() =>
+      translateNewsInputSchema.parse({
+        titleTh: "หัวข้อ",
+        contentTh: "",
       }),
     ).toThrow();
   });

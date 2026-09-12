@@ -1,5 +1,6 @@
 import { prisma } from "@/shared/lib/infra/prisma";
-import type { CreateNewsArticleInput, UpdateNewsArticleInput } from "./validations";
+import { getTenantRawGeminiConfig } from "@/features/identity/server";
+import type { CreateNewsArticleInput, UpdateNewsArticleInput, TranslateNewsInput } from "./validations";
 
 export interface NewsArticleDto {
   id: string;
@@ -205,4 +206,71 @@ export async function deleteNewsArticle(tenantId: string, id: string): Promise<v
   await prisma.newsArticle.delete({
     where: { id, tenantId },
   });
+}
+
+export async function translateNewsWithGemini(
+  tenantId: string,
+  input: TranslateNewsInput
+): Promise<{ titleEn: string; contentEn: string }> {
+  const cfg = await getTenantRawGeminiConfig(tenantId);
+  if (!cfg?.apiKey) {
+    throw new Error("ยังไม่ได้กำหนดค่า Gemini API Key ในหน้าการตั้งค่า (Gemini API Key is not configured in Settings)");
+  }
+
+  const model = cfg.model || "gemini-2.5-flash";
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(cfg.apiKey)}`;
+
+  const prompt = `You are an expert bilingual university communications specialist and professional translator.
+Translate and adapt the following Thai faculty news announcement into standard, professional university English.
+Preserve proper names, dates, academic positions, and formal tone accurately.
+
+Thai Title:
+${input.titleTh}
+
+Thai Content:
+${input.contentTh}
+
+Return ONLY valid JSON matching this schema:
+{
+  "titleEn": "English Title",
+  "contentEn": "English Content"
+}`;
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      contents: [
+        {
+          parts: [{ text: prompt }],
+        },
+      ],
+      generationConfig: {
+        responseMimeType: "application/json",
+        temperature: 0.2,
+      },
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    const errMsg = (errorData as { error?: { message?: string } })?.error?.message || `HTTP ${response.status}: ${response.statusText}`;
+    throw new Error(`Gemini API error: ${errMsg}`);
+  }
+
+  const data = await response.json();
+  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!text) {
+    throw new Error("ไม่ได้รับคำตอบจาก Gemini API (No response received from Gemini API)");
+  }
+
+  try {
+    const parsed = JSON.parse(text);
+    return {
+      titleEn: typeof parsed.titleEn === "string" ? parsed.titleEn.trim() : "",
+      contentEn: typeof parsed.contentEn === "string" ? parsed.contentEn.trim() : "",
+    };
+  } catch {
+    throw new Error("รูปแบบข้อมูลที่ได้รับจาก Gemini ไม่ถูกต้อง (Invalid JSON format from Gemini)");
+  }
 }
