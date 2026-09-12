@@ -25,4 +25,14 @@ if (fs.existsSync(staticSrc)) {
   fs.cpSync(staticSrc, staticDest, { recursive: true });
 }
 
-console.log("[Build] Standalone assets copied successfully!");
+// 3. Remove non-runtime directories from standalone to keep installer lightweight
+const unneededDirs = ["dist-desktop", "e2e", "tests", ".git"];
+for (const dir of unneededDirs) {
+  const target = path.join(standaloneDir, dir);
+  if (fs.existsSync(target)) {
+    console.log(`[Build] Cleaning up '${dir}' from standalone...`);
+    fs.rmSync(target, { recursive: true, force: true });
+  }
+}
+
+console.log("[Build] Standalone assets copied and cleaned successfully!");

@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ - FMS</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+    body {
+      background: #FAF5F2;
+      color: #1c1917;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 24px;
+    }
+    .card {
+      background: #ffffff;
+      border: 1px solid #e7e5e4;
+      border-radius: 20px;
+      padding: 40px 36px;
+      max-width: 480px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+    }
+    .icon-box {
+      width: 80px;
+      height: 80px;
+      border-radius: 20px;
+      background: #fee2e2;
+      color: #991b1b;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+      font-size: 36px;
+    }
+    h1 {
+      font-size: 22px;
+      font-weight: 700;
+      color: #7f1d1d;
+      margin-bottom: 10px;
+    }
+    p {
+      color: #78716c;
+      font-size: 14px;
+      line-height: 1.6;
+      margin-bottom: 24px;
+    }
+    .url-badge {
+      display: inline-block;
+      background: #f5f5f4;
+      padding: 6px 14px;
+      border-radius: 9999px;
+      font-family: monospace;
+      font-size: 13px;
+      color: #44403c;
+      margin-bottom: 24px;
+      word-break: break-all;
+      border: 1px solid #e7e5e4;
+    }
+    .btn-group {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    button {
+      padding: 12px 20px;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: none;
+    }
+    .btn-primary {
+      background: #991b1b;
+      color: #ffffff;
+    }
+    .btn-primary:hover {
+      background: #7f1d1d;
+    }
+    .btn-secondary {
+      background: #f5f5f4;
+      color: #44403c;
+      border: 1px solid #d6d3d1;
+    }
+    .btn-secondary:hover {
+      background: #e7e5e4;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon-box">⚡</div>
+    <h1>ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ระบบได้</h1>
+    <p>ไม่สามารถติดต่อกับเซิร์ฟเวอร์ที่ระบุ กรุณาตรวจสอบว่าเซิร์ฟเวอร์เปิดใช้งานอยู่ หรือปรับการตั้งค่าการเชื่อมต่อ</p>
+    <div class="url-badge" id="targetUrl">กำลังโหลด...</div>
+    <div class="btn-group">
+      <button class="btn-primary" id="btnRetry">🔄 ลองเชื่อมต่อใหม่อีกครั้ง</button>
+      <button class="btn-secondary" id="btnSettings">⚙️ ตั้งค่าเซิร์ฟเวอร์ใหม่</button>
+    </div>
+  </div>
+
+  <script>
+    if (window.electronAPI) {
+      window.electronAPI.getServerUrl().then(url => {
+        document.getElementById('targetUrl').textContent = url || 'http://localhost:3010';
+      });
+      document.getElementById('btnRetry').addEventListener('click', () => {
+        window.electronAPI.retryConnection();
+      });
+      document.getElementById('btnSettings').addEventListener('click', () => {
+        window.electronAPI.openSettingsWindow();
+      });
+    }
+  </script>
+</body>
+</html>

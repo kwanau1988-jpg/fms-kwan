@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>ตั้งค่าการเชื่อมต่อเซิร์ฟเวอร์ - FMS Desktop</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+    body {
+      background: #FAF5F2;
+      color: #1c1917;
+      padding: 24px;
+      user-select: none;
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .header img {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+    }
+    .header h2 {
+      font-size: 18px;
+      color: #7f1d1d;
+      font-weight: 700;
+    }
+    .header p {
+      font-size: 12px;
+      color: #78716c;
+    }
+    .card {
+      background: #ffffff;
+      border: 1px solid #e7e5e4;
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .mode-option {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid #e7e5e4;
+      margin-bottom: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .mode-option:hover {
+      border-color: #991b1b;
+      background: #fef2f2;
+    }
+    .mode-option.active {
+      border-color: #991b1b;
+      background: #fff1f2;
+    }
+    .mode-option input {
+      margin-top: 4px;
+      cursor: pointer;
+    }
+    .mode-title {
+      font-weight: 600;
+      font-size: 14px;
+      color: #1c1917;
+    }
+    .mode-desc {
+      font-size: 12px;
+      color: #78716c;
+      margin-top: 2px;
+    }
+    .input-group {
+      margin-top: 12px;
+    }
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: #44403c;
+      margin-bottom: 6px;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: 1px solid #d6d3d1;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    input[type="text"]:focus {
+      border-color: #991b1b;
+      box-shadow: 0 0 0 2px rgba(153, 27, 27, 0.2);
+    }
+    .status-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      margin-top: 10px;
+      min-height: 24px;
+    }
+    .status-badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 9999px;
+      font-weight: 600;
+      font-size: 12px;
+    }
+    .badge-success { background: #dcfce7; color: #166534; }
+    .badge-error { background: #fee2e2; color: #991b1b; }
+    .badge-testing { background: #fef3c7; color: #92400e; }
+    .footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+    button {
+      padding: 10px 18px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 0.15s;
+    }
+    .btn-test { background: #f5f5f4; color: #44403c; border: 1px solid #d6d3d1; }
+    .btn-test:hover { background: #e7e5e4; }
+    .btn-save { background: #991b1b; color: #ffffff; }
+    .btn-save:hover { background: #7f1d1d; }
+    .btn-cancel { background: transparent; color: #78716c; }
+    .btn-cancel:hover { background: #e7e5e4; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <img src="icon.png" alt="FMS" />
+    <div>
+      <h2>การตั้งค่าการเชื่อมต่อเซิร์ฟเวอร์</h2>
+      <p>ระบบบริหารจัดการองค์กร - วิทยาลัยสงฆ์บุรีรัมย์</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="mode-option" id="optCentral" onclick="selectMode('central')">
+      <input type="radio" name="mode" id="modeCentral" value="central" checked>
+      <div>
+        <div class="mode-title">🌐 เชื่อมต่อเซิร์ฟเวอร์กลาง (แนะนำสำหรับเจ้าหน้าที่)</div>
+        <div class="mode-desc">เชื่อมต่อกับเซิร์ฟเวอร์กลางของวิทยาลัย เพื่อให้ข้อมูลเงินเดือน การจอง และผู้ใช้อัปเดตตรงกัน</div>
+      </div>
+    </div>
+
+    <div class="mode-option" id="optLocal" onclick="selectMode('local')">
+      <input type="radio" name="mode" id="modeLocal" value="local">
+      <div>
+        <div class="mode-title">💻 เซิร์ฟเวอร์ในเครื่อง (Local Standalone Server)</div>
+        <div class="mode-desc">รันเซิร์ฟเวอร์ Next.js ภายในเครื่องคอมพิวเตอร์นี้ (สำหรับเครื่องแม่ข่ายประจำสำนักงาน)</div>
+      </div>
+    </div>
+
+    <div class="input-group" id="urlGroup">
+      <label for="serverUrl">URL เซิร์ฟเวอร์กลาง (เช่น http://192.168.1.100:3010 หรือโดเมนคณะ):</label>
+      <input type="text" id="serverUrl" placeholder="http://192.168.1.xxx:3010" />
+      <div style="margin-top: 8px;">
+        <button type="button" class="btn-test" id="btnTest">🔍 ทดสอบการเชื่อมต่อ (Ping)</button>
+      </div>
+      <div class="status-bar" id="statusResult"></div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <button type="button" class="btn-cancel" id="btnCancel">ยกเลิก</button>
+    <button type="button" class="btn-save" id="btnSave">💾 บันทึกและเชื่อมต่อ</button>
+  </div>
+
+  <script>
+    let currentMode = 'central';
+
+    function selectMode(m) {
+      currentMode = m;
+      document.getElementById('modeCentral').checked = (m === 'central');
+      document.getElementById('modeLocal').checked = (m === 'local');
+      document.getElementById('optCentral').classList.toggle('active', m === 'central');
+      document.getElementById('optLocal').classList.toggle('active', m === 'local');
+      document.getElementById('urlGroup').style.display = (m === 'central') ? 'block' : 'none';
+    }
+
+    if (window.electronAPI) {
+      window.electronAPI.getConfig().then(cfg => {
+        if (cfg.customServerUrl) {
+          selectMode('central');
+          document.getElementById('serverUrl').value = cfg.customServerUrl;
+        } else {
+          selectMode('local');
+          document.getElementById('serverUrl').value = 'http://localhost:3010';
+        }
+      });
+
+      document.getElementById('btnTest').addEventListener('click', async () => {
+        const url = document.getElementById('serverUrl').value.trim();
+        const resDiv = document.getElementById('statusResult');
+        if (!url) {
+          resDiv.innerHTML = '<span class="status-badge badge-error">กรุณาระบุ URL เซิร์ฟเวอร์</span>';
+          return;
+        }
+        resDiv.innerHTML = '<span class="status-badge badge-testing">กำลังทดสอบการเชื่อมต่อ...</span>';
+        const res = await window.electronAPI.testConnection(url);
+        if (res.ok) {
+          resDiv.innerHTML = '<span class="status-badge badge-success">✓ เชื่อมต่อสำเร็จ (ตอบสนองใน ' + res.latency + ' ms)</span>';
+        } else {
+          resDiv.innerHTML = '<span class="status-badge badge-error">✗ เชื่อมต่อล้มเหลว: ' + res.error + '</span>';
+        }
+      });
+
+      document.getElementById('btnSave').addEventListener('click', async () => {
+        const cfg = {
+          mode: currentMode,
+          customServerUrl: (currentMode === 'central') ? document.getElementById('serverUrl').value.trim() : ''
+        };
+        await window.electronAPI.saveConfig(cfg);
+      });
+
+      document.getElementById('btnCancel').addEventListener('click', () => {
+        window.close();
+      });
+    }
+  </script>
+</body>
+</html>

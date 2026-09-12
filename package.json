@@ -93,7 +93,13 @@
         "from": ".next/standalone",
         "to": "standalone",
         "filter": [
-          "**/*"
+          "**/*",
+          "!dist-desktop/**",
+          "!**/dist-desktop/**",
+          "!tests/**",
+          "!**/tests/**",
+          "!e2e/**",
+          "!**/e2e/**"
         ]
       }
     ],

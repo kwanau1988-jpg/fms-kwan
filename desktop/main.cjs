@@ -1,16 +1,19 @@
-const { app, BrowserWindow, Menu, dialog, ipcMain, shell } = require('electron');
+const { app, BrowserWindow, Menu, Tray, dialog, ipcMain, shell } = require('electron');
 const path = require('path');
 const http = require('http');
+const https = require('https');
 const net = require('net');
 const fs = require('fs');
 const { fork } = require('child_process');
 
 let mainWindow = null;
+let settingsWindow = null;
+let tray = null;
 let serverProcess = null;
 let currentServerUrl = '';
 let allocatedPort = 3010;
 
-// Config file in userData for saving custom Server URL
+// Config file in userData for saving custom Server URL & window bounds
 function getConfigFilePath() {
   return path.join(app.getPath('userData'), 'fms-config.json');
 }
@@ -45,7 +48,6 @@ function getFreePort(startingPort = 3010) {
       server.close(() => resolve(port));
     });
     server.on('error', () => {
-      // If port is taken, try port 0 (OS assigned)
       const fallbackServer = net.createServer();
       fallbackServer.listen(0, () => {
         const port = fallbackServer.address().port;
@@ -55,25 +57,42 @@ function getFreePort(startingPort = 3010) {
   });
 }
 
+// Ping / Test connection with latency
+function pingUrl(targetUrl, timeoutMs = 7000) {
+  return new Promise((resolve) => {
+    const start = Date.now();
+    try {
+      const parsed = new URL(targetUrl);
+      const client = parsed.protocol === 'https:' ? https : http;
+      const req = client.get(targetUrl, (res) => {
+        resolve({ ok: true, latency: Date.now() - start, statusCode: res.statusCode });
+      });
+      req.on('error', (e) => {
+        resolve({ ok: false, error: e.message || 'Cannot reach server' });
+      });
+      req.setTimeout(timeoutMs, () => {
+        req.destroy();
+        resolve({ ok: false, error: 'Connection timed out (' + timeoutMs + 'ms)' });
+      });
+    } catch (err) {
+      resolve({ ok: false, error: 'Invalid URL format' });
+    }
+  });
+}
+
 // Wait for server to become responsive
-function waitForServer(url, timeoutMs = 45000) {
+function waitForServer(url, timeoutMs = 30000) {
   const startTime = Date.now();
   return new Promise((resolve, reject) => {
     const check = () => {
-      const req = http.get(url, (res) => {
-        // Any HTTP response (200, 302, 307, 404, etc.) means server is alive
-        resolve();
-      });
-      req.on('error', () => {
-        if (Date.now() - startTime > timeoutMs) {
-          reject(new Error('Server start timed out after ' + timeoutMs + 'ms'));
+      pingUrl(url, 2500).then((res) => {
+        if (res.ok) {
+          resolve();
+        } else if (Date.now() - startTime > timeoutMs) {
+          reject(new Error(res.error || 'Server start timed out'));
         } else {
           setTimeout(check, 600);
         }
-      });
-      req.setTimeout(2000, () => {
-        req.destroy();
-        setTimeout(check, 600);
       });
     };
     check();
@@ -84,7 +103,6 @@ function waitForServer(url, timeoutMs = 45000) {
 async function startLocalNextServer(port) {
   if (!app.isPackaged) return; // In dev, we use dev server
 
-  // Look for standalone server.js in various potential unpack paths
   const possiblePaths = [
     path.join(process.resourcesPath, 'standalone', 'server.js'),
     path.join(process.resourcesPath, 'app', '.next', 'standalone', 'server.js'),
@@ -121,6 +139,39 @@ async function startLocalNextServer(port) {
   });
 }
 
+function openSettingsDialog() {
+  if (settingsWindow) {
+    settingsWindow.focus();
+    return;
+  }
+
+  const iconPath = path.join(__dirname, 'icon.png');
+
+  settingsWindow = new BrowserWindow({
+    width: 580,
+    height: 520,
+    resizable: false,
+    parent: mainWindow,
+    modal: true,
+    title: 'ตั้งค่าการเชื่อมต่อเซิร์ฟเวอร์ - FMS',
+    icon: fs.existsSync(iconPath) ? iconPath : undefined,
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.cjs'),
+      nodeIntegration: false,
+      contextIsolation: true,
+      sandbox: true,
+    },
+    autoHideMenuBar: true,
+    backgroundColor: '#FAF5F2',
+  });
+
+  settingsWindow.loadFile(path.join(__dirname, 'settings.html'));
+
+  settingsWindow.on('closed', () => {
+    settingsWindow = null;
+  });
+}
+
 function createApplicationMenu() {
   const template = [
     {
@@ -140,49 +191,22 @@ function createApplicationMenu() {
           accelerator: 'CmdOrCtrl+R',
           click: () => mainWindow && mainWindow.reload(),
         },
+        {
+          label: 'พิมพ์หน้านี้ (Print)...',
+          accelerator: 'CmdOrCtrl+P',
+          click: () => mainWindow && mainWindow.webContents.print(),
+        },
         { type: 'separator' },
         {
           label: 'ตั้งค่าการเชื่อมต่อเซิร์ฟเวอร์ (Server Settings)...',
-          click: async () => {
-            const config = loadSavedConfig();
-            const { response } = await dialog.showMessageBox(mainWindow, {
-              type: 'question',
-              buttons: ['ใช้เซิร์ฟเวอร์ในเครื่อง (Local)', 'ระบุ URL เซิร์ฟเวอร์กลาง (Custom URL)', 'ยกเลิก'],
-              defaultId: 0,
-              title: 'ตั้งค่าเซิร์ฟเวอร์',
-              message: 'เลือกรูปแบบการเชื่อมต่อระบบ:',
-              detail: `เซิร์ฟเวอร์ปัจจุบัน: ${currentServerUrl}\n\nหากต้องการเชื่อมต่อกับเซิร์ฟเวอร์กลางของวิทยาลัย (เช่น http://192.168.1.xxx:3010) ให้เลือก "ระบุ URL เซิร์ฟเวอร์กลาง"`,
-            });
-
-            if (response === 0) {
-              // Local
-              delete config.customServerUrl;
-              saveConfig(config);
-              dialog.showMessageBox(mainWindow, {
-                type: 'info',
-                message: 'บันทึกการตั้งค่าแล้ว โปรแกรมจะเริ่มทำงานใหม่',
-              }).then(() => {
-                app.relaunch();
-                app.exit(0);
-              });
-            } else if (response === 1) {
-              // We open a prompt or ask user
-              // For simplicity and stability, show current guidance
-              dialog.showMessageBox(mainWindow, {
-                type: 'info',
-                title: 'การระบุ URL เซิร์ฟเวอร์กลาง',
-                message: 'แก้ไขไฟล์ตั้งค่าเซิร์ฟเวอร์',
-                detail: `ไฟล์ตั้งค่าอยู่ที่:\n${getConfigFilePath()}\n\nสามารถใส่: { "customServerUrl": "http://your-server-ip:3010" }`,
-                buttons: ['เปิดโฟลเดอร์ตั้งค่า', 'ตกลง'],
-              }).then((res) => {
-                if (res.response === 0) {
-                  shell.showItemInFolder(getConfigFilePath());
-                }
-              });
-            }
-          },
+          accelerator: 'CmdOrCtrl+,',
+          click: () => openSettingsDialog(),
         },
         { type: 'separator' },
+        {
+          label: 'ซ่อนหน้าต่าง (Minimize to Tray)',
+          click: () => mainWindow && mainWindow.hide(),
+        },
         {
           label: 'ออกจากโปรแกรม (Exit)',
           accelerator: 'CmdOrCtrl+Q',
@@ -221,6 +245,11 @@ function createApplicationMenu() {
       label: 'ช่วยเหลือ (Help)',
       submenu: [
         {
+          label: 'เปิดโฟลเดอร์การตั้งค่า (Open Config Folder)',
+          click: () => shell.showItemInFolder(getConfigFilePath()),
+        },
+        { type: 'separator' },
+        {
           label: 'เกี่ยวกับระบบ FMS (About)',
           click: () => {
             dialog.showMessageBox(mainWindow, {
@@ -240,12 +269,78 @@ function createApplicationMenu() {
   Menu.setApplicationMenu(menu);
 }
 
+function createSystemTray() {
+  const iconPath = path.join(__dirname, 'icon.png');
+  if (!fs.existsSync(iconPath)) return;
+
+  try {
+    tray = new Tray(iconPath);
+    const trayMenu = Menu.buildFromTemplate([
+      {
+        label: 'เปิดระบบ FMS',
+        click: () => {
+          if (mainWindow) {
+            mainWindow.show();
+            mainWindow.focus();
+          }
+        },
+      },
+      {
+        label: 'ตั้งค่าเซิร์ฟเวอร์...',
+        click: () => openSettingsDialog(),
+      },
+      {
+        label: 'รีโหลด',
+        click: () => mainWindow && mainWindow.reload(),
+      },
+      { type: 'separator' },
+      {
+        label: 'ออกจากโปรแกรม',
+        click: () => app.quit(),
+      },
+    ]);
+
+    tray.setToolTip('ระบบบริหารจัดการองค์กร FMS - วิทยาลัยสงฆ์บุรีรัมย์');
+    tray.setContextMenu(trayMenu);
+
+    tray.on('double-click', () => {
+      if (mainWindow) {
+        mainWindow.show();
+        mainWindow.focus();
+      }
+    });
+  } catch (e) {
+    console.error('Failed to create system tray:', e);
+  }
+}
+
+async function loadMainUrl() {
+  if (!mainWindow) return;
+
+  try {
+    console.log('[Electron] Connecting to server at:', currentServerUrl);
+    await waitForServer(currentServerUrl, 15000);
+    mainWindow.loadURL(currentServerUrl);
+  } catch (err) {
+    console.error('[Electron] Server unreachable, loading offline fallback page:', err.message);
+    mainWindow.loadFile(path.join(__dirname, 'offline.html'));
+  }
+}
+
 async function createWindow() {
   const iconPath = path.join(__dirname, 'icon.png');
+  const config = loadSavedConfig();
+
+  const width = config.bounds?.width || 1440;
+  const height = config.bounds?.height || 900;
+  const x = config.bounds?.x;
+  const y = config.bounds?.y;
 
   mainWindow = new BrowserWindow({
-    width: 1440,
-    height: 900,
+    width,
+    height,
+    x,
+    y,
     minWidth: 1080,
     minHeight: 700,
     title: 'ระบบบริหารจัดการองค์กร - วิทยาลัยสงฆ์บุรีรัมย์',
@@ -256,7 +351,7 @@ async function createWindow() {
       contextIsolation: true,
       sandbox: true,
     },
-    show: false, // show when ready to prevent flicker
+    show: false,
     backgroundColor: '#FAF5F2',
   });
 
@@ -264,9 +359,20 @@ async function createWindow() {
     mainWindow.show();
   });
 
-  createApplicationMenu();
+  // Save bounds on resize/move
+  const saveBounds = () => {
+    if (!mainWindow || mainWindow.isDestroyed()) return;
+    const bounds = mainWindow.getBounds();
+    const cfg = loadSavedConfig();
+    cfg.bounds = bounds;
+    saveConfig(cfg);
+  };
+  mainWindow.on('resize', saveBounds);
+  mainWindow.on('move', saveBounds);
 
-  const config = loadSavedConfig();
+  createApplicationMenu();
+  createSystemTray();
+
   if (config.customServerUrl) {
     currentServerUrl = config.customServerUrl;
     console.log('[Electron] Using custom server URL:', currentServerUrl);
@@ -278,17 +384,7 @@ async function createWindow() {
     await startLocalNextServer(allocatedPort);
   }
 
-  try {
-    console.log('[Electron] Connecting to server at:', currentServerUrl);
-    await waitForServer(currentServerUrl, 30000);
-    mainWindow.loadURL(currentServerUrl);
-  } catch (err) {
-    console.error('[Electron] Failed to connect to server:', err);
-    dialog.showErrorBox(
-      'ข้อผิดพลาดการเชื่อมต่อ',
-      `ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ระบบได้ที่: ${currentServerUrl}\n\nกรุณาตรวจสอบว่าเซิร์ฟเวอร์เปิดใช้งานอยู่ หรือตรวจสอบการตั้งค่าเครือข่าย`
-    );
-  }
+  await loadMainUrl();
 
   mainWindow.on('closed', () => {
     mainWindow = null;
@@ -298,10 +394,36 @@ async function createWindow() {
 // IPC Handlers
 ipcMain.handle('app:get-version', () => app.getVersion());
 ipcMain.handle('app:get-server-url', () => currentServerUrl);
-ipcMain.handle('app:set-server-url', (event, url) => {
-  const cfg = loadSavedConfig();
-  cfg.customServerUrl = url;
-  saveConfig(cfg);
+ipcMain.handle('app:get-config', () => loadSavedConfig());
+ipcMain.handle('app:test-connection', async (event, url) => {
+  return await pingUrl(url);
+});
+ipcMain.handle('app:save-config', async (event, cfg) => {
+  const currentCfg = loadSavedConfig();
+  const merged = { ...currentCfg, ...cfg };
+  saveConfig(merged);
+
+  if (cfg.customServerUrl) {
+    currentServerUrl = cfg.customServerUrl;
+  } else if (!app.isPackaged) {
+    currentServerUrl = process.env.DEV_SERVER_URL || 'http://localhost:3010';
+  } else {
+    currentServerUrl = `http://localhost:${allocatedPort}`;
+  }
+
+  if (settingsWindow) {
+    settingsWindow.close();
+  }
+
+  await loadMainUrl();
+  return true;
+});
+ipcMain.handle('app:retry-connection', async () => {
+  await loadMainUrl();
+  return true;
+});
+ipcMain.handle('app:open-settings', () => {
+  openSettingsDialog();
   return true;
 });
 
