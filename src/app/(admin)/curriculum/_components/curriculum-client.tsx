@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useRef } from "react";
 import {
   Plus,
   Edit2,
@@ -19,6 +19,7 @@ import {
   Compass,
   Briefcase,
   Download,
+  Upload,
   ExternalLink,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -249,6 +250,227 @@ export function CurriculumClient({
         ? "นำเข้าข้อมูลมาตรฐาน มคอ. 2 (พุทธศาสตรบัณฑิต ๒๕๗๐) เรียบร้อยแล้ว"
         : "Loaded TQF 2 Buddhist Studies template successfully"
     );
+  };
+
+  const jsonFileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleExportJson = () => {
+    const selectedDept = departments.find((d) => d.id === currDeptId);
+    const studyPlan = [
+      {
+        categoryTh: "หมวดวิชาศึกษาทั่วไป",
+        categoryEn: "General Education Courses",
+        credits: Number(genEdCredits) || 0,
+        description: "",
+      },
+      {
+        categoryTh: "หมวดวิชาเฉพาะ",
+        categoryEn: "Major Requirements",
+        credits: Number(majorCredits) || 0,
+        description: "",
+      },
+      {
+        categoryTh: "หมวดวิชาเลือกเสรี",
+        categoryEn: "Free Elective Courses",
+        credits: Number(freeElectiveCredits) || 0,
+        description: "",
+      },
+    ];
+
+    const objectives = objectivesText
+      .split("\n")
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    const plos = plosText
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .map((line, idx) => {
+        const colonIdx = line.indexOf(":");
+        if (colonIdx > 0) {
+          const codePart = line.slice(0, colonIdx).trim();
+          const rest = line.slice(colonIdx + 1).trim();
+          const pipeParts = rest.split("|").map((p) => p.trim());
+          return {
+            code: codePart,
+            descTh: pipeParts[0] || rest,
+            descEn: pipeParts[1] || "",
+          };
+        }
+        return {
+          code: `PLO ${idx + 1}`,
+          descTh: line,
+          descEn: "",
+        };
+      });
+
+    const careerPaths = careerPathsText
+      .split("\n")
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    const exportData = {
+      $schema: "https://fms.ac.th/schemas/curriculum-mko2.json",
+      version: "1.0",
+      exportedAt: new Date().toISOString(),
+      code: code || "CURR-UNNAMED",
+      nameTh,
+      nameEn,
+      degreeTh,
+      degreeEn,
+      degreeLevel,
+      totalCredits: Number(totalCredits) || 0,
+      tuitionFee: tuitionFee === "" ? null : Number(tuitionFee),
+      status,
+      brochurePdfUrl: brochurePdfUrl || "",
+      departmentId: currDeptId || null,
+      departmentCode: selectedDept?.code || "",
+      departmentNameTh: selectedDept?.nameTh || "",
+      departmentNameEn: selectedDept?.nameEn || "",
+      philosophy,
+      objectives,
+      plos,
+      studyPlan,
+      careerPaths,
+      qualifications,
+    };
+
+    const jsonString = JSON.stringify(exportData, null, 2);
+    const blob = new Blob([jsonString], { type: "application/json;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    const safeCode = (code || "curriculum").replace(/[^a-zA-Z0-9_\-\.]/g, "_");
+    link.download = `${safeCode}_mko2.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    toast.success(t("curriculum.exportJsonSuccess"));
+  };
+
+  const applyImportedJsonData = (data: Record<string, unknown>) => {
+    if (!data || typeof data !== "object") {
+      toast.error(t("curriculum.importJsonError"));
+      return;
+    }
+
+    if (data.code) setCode(String(data.code));
+    if (data.nameTh || data.name) setNameTh(String(data.nameTh || data.name));
+    if (data.nameEn) setNameEn(String(data.nameEn));
+    if (data.degreeTh || data.degree) setDegreeTh(String(data.degreeTh || data.degree));
+    if (data.degreeEn) setDegreeEn(String(data.degreeEn));
+
+    if (data.degreeLevel && ["BACHELOR", "MASTER", "DOCTORAL", "SHORT_COURSE"].includes(data.degreeLevel as string)) {
+      setDegreeLevel(data.degreeLevel as "BACHELOR" | "MASTER" | "DOCTORAL" | "SHORT_COURSE");
+    }
+
+    if (data.totalCredits !== undefined) setTotalCredits(Number(data.totalCredits) || 0);
+    if (data.tuitionFee !== undefined && data.tuitionFee !== null) {
+      setTuitionFee(Number(data.tuitionFee) || "");
+    }
+    if (data.status && ["OPEN", "UPDATING", "CLOSED"].includes(data.status as string)) {
+      setStatus(data.status as "OPEN" | "UPDATING" | "CLOSED");
+    }
+    if (data.brochurePdfUrl !== undefined) {
+      setBrochurePdfUrl(String(data.brochurePdfUrl || ""));
+    }
+
+    if (data.philosophy !== undefined) {
+      setPhilosophy(String(data.philosophy || ""));
+    }
+
+    if (Array.isArray(data.objectives)) {
+      setObjectivesText(data.objectives.map((o: unknown) => String(o)).join("\n"));
+    } else if (typeof data.objectives === "string") {
+      setObjectivesText(data.objectives);
+    }
+
+    if (Array.isArray(data.plos)) {
+      setPlosText(
+        data.plos
+          .map((p: unknown) => {
+            if (typeof p === "string") return p;
+            if (p && typeof p === "object") {
+              const obj = p as Record<string, unknown>;
+              const code = String(obj.code || "");
+              const descTh = String(obj.descTh || "");
+              const descEn = String(obj.descEn || "");
+              if (descEn) return `${code}: ${descTh} | ${descEn}`;
+              return `${code}: ${descTh}`;
+            }
+            return "";
+          })
+          .filter(Boolean)
+          .join("\n"),
+      );
+    } else if (typeof data.plos === "string") {
+      setPlosText(data.plos);
+    }
+
+    if (Array.isArray(data.studyPlan)) {
+      const plan = data.studyPlan as Record<string, unknown>[];
+      if (plan.length >= 1 && plan[0].credits !== undefined) {
+        setGenEdCredits(Number(plan[0].credits) || 0);
+      }
+      if (plan.length >= 2 && plan[1].credits !== undefined) {
+        setMajorCredits(Number(plan[1].credits) || 0);
+      }
+      if (plan.length >= 3 && plan[2].credits !== undefined) {
+        setFreeElectiveCredits(Number(plan[2].credits) || 0);
+      }
+    } else {
+      if (data.genEdCredits !== undefined) setGenEdCredits(Number(data.genEdCredits) || 0);
+      if (data.majorCredits !== undefined) setMajorCredits(Number(data.majorCredits) || 0);
+      if (data.freeElectiveCredits !== undefined) setFreeElectiveCredits(Number(data.freeElectiveCredits) || 0);
+    }
+
+    if (Array.isArray(data.careerPaths)) {
+      setCareerPathsText(data.careerPaths.map((c: unknown) => String(c)).join("\n"));
+    } else if (typeof data.careerPaths === "string") {
+      setCareerPathsText(data.careerPaths);
+    }
+
+    if (data.qualifications !== undefined) {
+      setQualifications(String(data.qualifications || ""));
+    }
+
+    if (data.departmentId && departments.some((d) => d.id === data.departmentId)) {
+      setCurrDeptId(String(data.departmentId));
+    } else if (data.departmentCode) {
+      const match = departments.find((d) => d.code.toUpperCase() === String(data.departmentCode).toUpperCase());
+      if (match) setCurrDeptId(match.id);
+    } else if (data.departmentNameTh || data.departmentName) {
+      const targetName = String(data.departmentNameTh || data.departmentName).toLowerCase();
+      const match = departments.find((d) => d.nameTh.toLowerCase().includes(targetName) || d.nameEn.toLowerCase().includes(targetName));
+      if (match) setCurrDeptId(match.id);
+    }
+
+    toast.success(t("curriculum.importJsonSuccess"));
+  };
+
+  const handleImportJsonFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const text = event.target?.result as string;
+        const parsed = JSON.parse(text) as Record<string, unknown>;
+        applyImportedJsonData(parsed);
+      } catch (err) {
+        console.error("Failed to parse JSON file", err);
+        toast.error(t("curriculum.importJsonError"));
+      } finally {
+        if (jsonFileInputRef.current) {
+          jsonFileInputRef.current.value = "";
+        }
+      }
+    };
+    reader.readAsText(file, "UTF-8");
   };
 
   const handleSaveCurriculum = () => {
@@ -903,15 +1125,44 @@ export function CurriculumClient({
                 </p>
               </div>
 
-              <button
-                type="button"
-                onClick={loadMko2Template}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 text-xs font-semibold border border-amber-500/30 transition-colors cursor-pointer"
-                title={isTh ? "ดึงข้อมูลตัวอย่าง มคอ. 2 พระพุทธศาสนา 2570 เข้าแบบฟอร์มทันที" : "Populate with TQF 2 template"}
-              >
-                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                <span>{isTh ? "เติมข้อมูลตัวอย่าง มคอ. 2" : "Load TQF 2 Template"}</span>
-              </button>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleExportJson}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 text-blue-700 dark:text-blue-300 text-xs font-semibold border border-blue-500/30 transition-colors cursor-pointer"
+                  title={isTh ? "ส่งออกข้อมูลหลักสูตรเป็นไฟล์ JSON" : "Export curriculum as JSON"}
+                >
+                  <Download className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                  <span>{t("curriculum.exportJson")}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => jsonFileInputRef.current?.click()}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-xs font-semibold border border-emerald-500/30 transition-colors cursor-pointer"
+                  title={isTh ? "นำเข้าข้อมูลหลักสูตรจากไฟล์ JSON" : "Import curriculum from JSON"}
+                >
+                  <Upload className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                  <span>{t("curriculum.importJson")}</span>
+                </button>
+                <input
+                  ref={jsonFileInputRef}
+                  type="file"
+                  accept=".json,application/json"
+                  className="hidden"
+                  onChange={handleImportJsonFile}
+                />
+
+                <button
+                  type="button"
+                  onClick={loadMko2Template}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 text-xs font-semibold border border-amber-500/30 transition-colors cursor-pointer"
+                  title={isTh ? "ดึงข้อมูลตัวอย่าง มคอ. 2 พระพุทธศาสนา 2570 เข้าแบบฟอร์มทันที" : "Populate with TQF 2 template"}
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                  <span>{isTh ? "เติมข้อมูลตัวอย่าง มคอ. 2" : "Load TQF 2 Template"}</span>
+                </button>
+              </div>
             </div>
 
             {/* Modal Sub-Tabs */}

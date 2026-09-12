@@ -32,6 +32,11 @@ export const MESSAGES: Dictionary = {
   "curriculum.updateSuccess": { th: "บันทึกการแก้ไขหลักสูตรแล้ว", en: "Curriculum updated successfully" },
   "curriculum.deleteSuccess": { th: "ลบหลักสูตรแล้ว", en: "Curriculum deleted successfully" },
   "curriculum.deleteConfirm": { th: "คุณต้องการลบหลักสูตรนี้ใช่หรือไม่?", en: "Are you sure you want to delete this curriculum?" },
+  "curriculum.exportJson": { th: "ส่งออก JSON", en: "Export JSON" },
+  "curriculum.importJson": { th: "นำเข้า JSON", en: "Import JSON" },
+  "curriculum.exportJsonSuccess": { th: "ส่งออกข้อมูลหลักสูตรเป็น JSON เรียบร้อยแล้ว", en: "Curriculum exported as JSON successfully" },
+  "curriculum.importJsonSuccess": { th: "นำเข้าข้อมูลหลักสูตรจาก JSON เรียบร้อยแล้ว", en: "Curriculum imported from JSON successfully" },
+  "curriculum.importJsonError": { th: "ไฟล์ JSON ไม่ถูกต้อง กรุณาตรวจสอบรูปแบบข้อมูล", en: "Invalid JSON format. Please check the file structure." },
 
   // Department Messages
   "department.title": { th: "ภาควิชาและส่วนงาน", en: "Academic Departments & Divisions" },

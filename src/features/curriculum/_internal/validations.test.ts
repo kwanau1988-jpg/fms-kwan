@@ -78,6 +78,37 @@ describe("curriculum validations", () => {
     const parsedNull = createCurriculumSchema.parse(validNullDept);
     expect(parsedNull.departmentId).toBeNull();
   });
+
+  it("validate createCurriculumSchema รองรับโครงสร้าง มคอ. 2 (philosophy, objectives, plos, studyPlan, careerPaths)", () => {
+    const mko2Data = {
+      code: "B.A.-BUDDHIST-70",
+      nameTh: "หลักสูตรพุทธศาสตรบัณฑิต",
+      nameEn: "Bachelor of Arts in Buddhist Studies",
+      degreeTh: "พธ.บ.",
+      degreeEn: "B.A.",
+      philosophy: "ปรัชญาของหลักสูตร",
+      objectives: ["วัตถุประสงค์ 1", "วัตถุประสงค์ 2"],
+      plos: [
+        { code: "PLO 1", descTh: "อธิบายหลักพุทธธรรม", descEn: "Explain doctrines" },
+        { code: "PLO 2", descTh: "ประยุกต์ใช้ในการแก้ปัญหา", descEn: "Apply to solve problems" },
+      ],
+      studyPlan: [
+        { categoryTh: "หมวดวิชาศึกษาทั่วไป", credits: 24 },
+        { categoryTh: "หมวดวิชาเฉพาะ", credits: 102 },
+        { categoryTh: "หมวดวิชาเลือกเสรี", credits: 6 },
+      ],
+      careerPaths: ["นักวิชาการ", "อาจารย์"],
+      qualifications: "สำเร็จการศึกษามัธยมศึกษาตอนปลาย",
+    };
+
+    const parsed = createCurriculumSchema.parse(mko2Data);
+    expect(parsed.code).toBe("B.A.-BUDDHIST-70");
+    expect(parsed.plos.length).toBe(2);
+    expect(parsed.plos[0].code).toBe("PLO 1");
+    expect(parsed.studyPlan.length).toBe(3);
+    expect(parsed.careerPaths).toContain("นักวิชาการ");
+    expect(parsed.philosophy).toBe("ปรัชญาของหลักสูตร");
+  });
 });
 
 describe("department validations", () => {
