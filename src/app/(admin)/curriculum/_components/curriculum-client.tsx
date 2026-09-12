@@ -34,6 +34,7 @@ interface Props {
   initialDepartments: DepartmentDto[];
   canManage: boolean;
   canManageDepartments?: boolean;
+  initialTab?: "curricula" | "departments";
 }
 
 export function CurriculumClient({
@@ -41,13 +42,19 @@ export function CurriculumClient({
   initialDepartments,
   canManage,
   canManageDepartments = true,
+  initialTab = "curricula",
 }: Props) {
   const t = useT();
   const locale = useLocale();
   const isTh = locale === "th";
 
   // Tab state
-  const [activeTab, setActiveTab] = useState<"curricula" | "departments">("curricula");
+  const [activeTab, setActiveTab] = useState<"curricula" | "departments">(initialTab);
+  const [prevInitialTab, setPrevInitialTab] = useState(initialTab);
+  if (prevInitialTab !== initialTab) {
+    setPrevInitialTab(initialTab);
+    setActiveTab(initialTab);
+  }
   const [items, setItems] = useState<CurriculumDto[]>(initialItems);
   const [departments, setDepartments] = useState<DepartmentDto[]>(initialDepartments);
   const [isPending, startTransition] = useTransition();

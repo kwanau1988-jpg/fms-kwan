@@ -21,6 +21,9 @@ describe("sidebar-nav", () => {
   });
   it("getActiveNavChain เลือก href ที่ตรงที่สุด", () => {
     expect(getActiveNavChain("/users/roles").map((c) => c.href)).toEqual(["/users", "/users/roles"]);
+    expect(getActiveNavChain("/curriculum/departments").map((c) => c.href)).toEqual(["/curriculum", "/curriculum/departments"]);
+    expect(getActiveNavChain("/booking/resources").map((c) => c.href)).toEqual(["/booking", "/booking/resources"]);
+    expect(getActiveNavChain("/me/payroll").map((c) => c.href)).toEqual(["/payroll", "/me/payroll"]);
     expect(getActiveNavChain("/settings").map((c) => c.href)).toEqual(["/settings"]);
     expect(getActiveNavChain("/nowhere")).toEqual([]);
   });

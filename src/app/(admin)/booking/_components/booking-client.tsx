@@ -54,6 +54,7 @@ interface Props {
   canCreate: boolean;
   canApprove: boolean;
   canManage: boolean;
+  initialTab?: "reservations" | "resources";
 }
 
 export function BookingClient({
@@ -63,6 +64,7 @@ export function BookingClient({
   canCreate,
   canApprove,
   canManage,
+  initialTab = "reservations",
 }: Props) {
   const t = useT();
   const locale = useLocale();
@@ -74,7 +76,12 @@ export function BookingClient({
   const [isPending, startTransition] = useTransition();
 
   // Active view tab: "reservations" | "resources"
-  const [activeTab, setActiveTab] = useState<"reservations" | "resources">("reservations");
+  const [activeTab, setActiveTab] = useState<"reservations" | "resources">(initialTab);
+  const [prevInitialTab, setPrevInitialTab] = useState(initialTab);
+  if (prevInitialTab !== initialTab) {
+    setPrevInitialTab(initialTab);
+    setActiveTab(initialTab);
+  }
 
   // Filters & Search
   const [searchQuery, setSearchQuery] = useState("");

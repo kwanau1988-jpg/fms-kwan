@@ -1,4 +1,5 @@
 export const payrollMessages = {
+  "payroll.group": { th: "เงินเดือนและค่าตอบแทน", en: "Payroll & Compensation" },
   "payroll.nav": { th: "ระบบเงินเดือน (เจ้าหน้าที่)", en: "Payroll Management" },
   "payroll.myNav": { th: "สลิปเงินเดือนของฉัน", en: "My Salary Slips" },
   "roles.module.payroll": { th: "ระบบสลิปเงินเดือน", en: "E-Payroll" },

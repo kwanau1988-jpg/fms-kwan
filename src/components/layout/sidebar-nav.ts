@@ -9,7 +9,6 @@ import {
   FileCheck,
   CalendarDays,
   QrCode,
-  Coins,
   Wallet,
   type LucideIcon,
 } from "lucide-react";
@@ -39,20 +38,45 @@ export const sidebarGroups: NavGroup[] = [
     label: "nav.group.overview",
     items: [
       { title: "nav.dashboard", href: "/dashboard", icon: LayoutDashboard },
-      { title: "หน้าเว็บไซต์คณะ (Portal)", href: "/portal", icon: Globe },
+      { title: "nav.portal", href: "/portal", icon: Globe },
     ],
   },
   {
-    label: "ระบบบริหารคณะวิทยาการจัดการ",
+    label: "nav.group.faculty",
     items: [
-      { title: "news.nav", href: "/news", icon: Newspaper, permission: NEWS_P.newsRead },
+      {
+        title: "curriculum.nav",
+        href: "/curriculum",
+        icon: GraduationCap,
+        permission: CURRICULUM_P.curriculumRead,
+        children: [
+          { title: "curriculum.tab.curricula", href: "/curriculum", permission: CURRICULUM_P.curriculumRead },
+          { title: "curriculum.tab.departments", href: "/curriculum/departments", permission: CURRICULUM_P.curriculumRead },
+        ],
+      },
+      {
+        title: "booking.nav",
+        href: "/booking",
+        icon: CalendarDays,
+        permission: BOOKING_P.bookingRead,
+        children: [
+          { title: "booking.tab.reservations", href: "/booking", permission: BOOKING_P.bookingRead },
+          { title: "booking.tab.resources", href: "/booking/resources", permission: BOOKING_P.bookingRead },
+        ],
+      },
+      {
+        title: "payroll.group",
+        href: "/payroll",
+        icon: Wallet,
+        children: [
+          { title: "payroll.myNav", href: "/me/payroll", permission: PAYROLL_P.payrollViewOwn },
+          { title: "payroll.nav", href: "/payroll", permission: PAYROLL_P.payrollManage },
+        ],
+      },
       { title: "personnel.nav", href: "/personnel", icon: UserCheck, permission: PERSONNEL_P.personnelRead },
-      { title: "curriculum.nav", href: "/curriculum", icon: GraduationCap, permission: CURRICULUM_P.curriculumRead },
-      { title: "document.nav", href: "/documents", icon: FileCheck, permission: EDOCUMENT_P.documentRead },
-      { title: "booking.nav", href: "/booking", icon: CalendarDays, permission: BOOKING_P.bookingRead },
       { title: "attendance.nav", href: "/attendance", icon: QrCode, permission: ATTENDANCE_P.attendanceTeach },
-      { title: "payroll.myNav", href: "/me/payroll", icon: Coins, permission: PAYROLL_P.payrollViewOwn },
-      { title: "payroll.nav", href: "/payroll", icon: Wallet, permission: PAYROLL_P.payrollManage },
+      { title: "document.nav", href: "/documents", icon: FileCheck, permission: EDOCUMENT_P.documentRead },
+      { title: "news.nav", href: "/news", icon: Newspaper, permission: NEWS_P.newsRead },
     ],
   },
   {
