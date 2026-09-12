@@ -159,6 +159,83 @@ async function main() {
     });
   }
 
+  // Seed Faculty Departments
+  let deptBa = await prisma.department.findFirst({ where: { tenantId: core.tenantId, code: "DEPT-BA" } });
+  if (!deptBa) {
+    deptBa = await prisma.department.create({
+      data: {
+        tenantId: core.tenantId,
+        code: "DEPT-BA",
+        nameTh: "ภาควิชาบริหารธุรกิจ",
+        nameEn: "Department of Business Administration",
+        description: "จัดการเรียนการสอนด้านการจัดการ การตลาดดิจิทัล และผู้ประกอบการสมัยใหม่",
+        headName: "ผศ.ดร. ภาณุวัฒน์ กิจการค้า",
+        email: "ba.dept@faculty.edu",
+        phone: "044-123456 ต่อ 1400",
+        officeRoom: "อาคาร 2 ชั้น 4 (MS-240)",
+        displayOrder: 1,
+        isActive: true,
+      },
+    });
+  }
+
+  let deptAcc = await prisma.department.findFirst({ where: { tenantId: core.tenantId, code: "DEPT-ACC" } });
+  if (!deptAcc) {
+    deptAcc = await prisma.department.create({
+      data: {
+        tenantId: core.tenantId,
+        code: "DEPT-ACC",
+        nameTh: "ภาควิชาการบัญชีและการเงิน",
+        nameEn: "Department of Accounting and Finance",
+        description: "ผลิตบัณฑิตนักบัญชีดิจิทัล ผู้ตรวจสอบบัญชี และผู้เชี่ยวชาญการเงินสมัยใหม่",
+        headName: "รศ.ดร. กานดา บัญชีทอง",
+        email: "acc.dept@faculty.edu",
+        phone: "044-123456 ต่อ 1200",
+        officeRoom: "อาคาร 2 ชั้น 3 (MS-230)",
+        displayOrder: 2,
+        isActive: true,
+      },
+    });
+  }
+
+  let deptEcon = await prisma.department.findFirst({ where: { tenantId: core.tenantId, code: "DEPT-ECON" } });
+  if (!deptEcon) {
+    deptEcon = await prisma.department.create({
+      data: {
+        tenantId: core.tenantId,
+        code: "DEPT-ECON",
+        nameTh: "ภาควิชาเศรษฐศาสตร์",
+        nameEn: "Department of Economics",
+        description: "ศึกษาและวิจัยด้านเศรษฐศาสตร์ธุรกิจ เศรษฐศาสตร์การพัฒนา และเศรษฐกิจดิจิทัล",
+        headName: "ผศ.ดร. วิชัย เศรษฐเสถียร",
+        email: "econ.dept@faculty.edu",
+        phone: "044-123456 ต่อ 1300",
+        officeRoom: "อาคาร 2 ชั้น 3 (MS-235)",
+        displayOrder: 3,
+        isActive: true,
+      },
+    });
+  }
+
+  let deptDean = await prisma.department.findFirst({ where: { tenantId: core.tenantId, code: "DEPT-DEAN" } });
+  if (!deptDean) {
+    deptDean = await prisma.department.create({
+      data: {
+        tenantId: core.tenantId,
+        code: "DEPT-DEAN",
+        nameTh: "สำนักงานคณบดีและบริการวิชาการ",
+        nameEn: "Dean's Office & Academic Services",
+        description: "บริหารงานวิชาการ พัฒนานักศึกษา บริการสนับสนุน และงานวิจัย",
+        headName: "ศ.ดร. สมชาย บริหารเลิศ",
+        email: "dean.office@faculty.edu",
+        phone: "044-123456 ต่อ 1100",
+        officeRoom: "อาคาร 1 ชั้น 1 (MS-101)",
+        displayOrder: 4,
+        isActive: true,
+      },
+    });
+  }
+
   // Seed Faculty Curricula
   const curriculaCount = await prisma.curriculum.count({ where: { tenantId: core.tenantId } });
   if (curriculaCount === 0) {
@@ -166,6 +243,7 @@ async function main() {
       data: [
         {
           tenantId: core.tenantId,
+          departmentId: deptBa.id,
           code: "B.B.A.-01",
           nameTh: "หลักสูตรบริหารธุรกิจบัณฑิต (สาขาวิชาการจัดการนวัตกรรมและเทคโนโลยีดิจิทัล)",
           nameEn: "Bachelor of Business Administration in Digital Innovation Management",
@@ -178,6 +256,7 @@ async function main() {
         },
         {
           tenantId: core.tenantId,
+          departmentId: deptAcc.id,
           code: "B.Acc.-01",
           nameTh: "หลักสูตรบัญชีบัณฑิต (สาขาวิชาการบัญชีดิจิทัลและการเงินสมัยใหม่)",
           nameEn: "Bachelor of Accountancy in Digital Accounting & Modern Finance",
@@ -190,6 +269,7 @@ async function main() {
         },
         {
           tenantId: core.tenantId,
+          departmentId: deptBa.id,
           code: "M.B.A.-01",
           nameTh: "หลักสูตรบริหารธุรกิจมหาบัณฑิต (สำหรับผู้บริหารระดับสูงและผู้ประกอบการ)",
           nameEn: "Master of Business Administration for Senior Executives",
@@ -201,6 +281,20 @@ async function main() {
           status: "OPEN",
         },
       ],
+    });
+  } else {
+    // อัปเดตผูก departmentId ให้กับหลักสูตรเดิมที่ยังไม่มีภาควิชา
+    await prisma.curriculum.updateMany({
+      where: { tenantId: core.tenantId, code: "B.B.A.-01", departmentId: null },
+      data: { departmentId: deptBa.id },
+    });
+    await prisma.curriculum.updateMany({
+      where: { tenantId: core.tenantId, code: "B.Acc.-01", departmentId: null },
+      data: { departmentId: deptAcc.id },
+    });
+    await prisma.curriculum.updateMany({
+      where: { tenantId: core.tenantId, code: "M.B.A.-01", departmentId: null },
+      data: { departmentId: deptBa.id },
     });
   }
 
