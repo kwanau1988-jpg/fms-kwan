@@ -16,6 +16,33 @@ async function main() {
     process.exit(1);
   }
   const core = await seedCore(prisma, { tenantCode: "DEMO", nameTh: "องค์กรตัวอย่าง", nameEn: "Sample Organization" });
+
+  // Seed extra feature permissions for DEMO roles
+  const demoPermissions = await prisma.permission.findMany({
+    where: { code: { in: ["payroll:view-own", "payroll:manage"] } },
+  });
+  const payrollViewOwn = demoPermissions.find((p) => p.code === "payroll:view-own");
+  const payrollManage = demoPermissions.find((p) => p.code === "payroll:manage");
+
+  if (core.roleIds["ADMIN"]) {
+    for (const p of [payrollViewOwn, payrollManage]) {
+      if (p) {
+        await prisma.rolePermission.upsert({
+          where: { roleId_permissionId: { roleId: core.roleIds["ADMIN"], permissionId: p.id } },
+          update: {},
+          create: { roleId: core.roleIds["ADMIN"], permissionId: p.id },
+        });
+      }
+    }
+  }
+  if (core.roleIds["STAFF"] && payrollViewOwn) {
+    await prisma.rolePermission.upsert({
+      where: { roleId_permissionId: { roleId: core.roleIds["STAFF"], permissionId: payrollViewOwn.id } },
+      update: {},
+      create: { roleId: core.roleIds["STAFF"], permissionId: payrollViewOwn.id },
+    });
+  }
+
   const hash = await bcrypt.hash(DEV_PASSWORD, 12);
   const users = [
     { email: "admin@app.local", name: "ผู้ดูแลสูงสุด", roles: ["SUPER_ADMIN"] },
