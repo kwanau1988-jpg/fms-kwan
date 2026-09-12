@@ -1,12 +1,16 @@
 {
   "name": "vibe-framework",
   "version": "0.1.0",
+  "main": "desktop/main.cjs",
   "private": true,
   "scripts": {
     "setup": "tsx scripts/setup.ts",
     "dev": "next dev -p 3010",
     "build": "next build",
     "start": "next start",
+    "desktop:dev": "electron .",
+    "desktop:build": "next build && tsx scripts/copy-standalone-assets.ts",
+    "desktop:dist": "npm run desktop:build && electron-builder --win",
     "lint": "eslint",
     "type-check": "tsc --noEmit",
     "type-check:tests": "tsc --noEmit -p tsconfig.tests.json && tsc --noEmit -p e2e/tsconfig.json",
@@ -60,6 +64,8 @@
     "@vitejs/plugin-react": "6.0.0",
     "dependency-cruiser": "16.10.4",
     "dotenv": "17.2.3",
+    "electron": "44.3.0",
+    "electron-builder": "26.15.3",
     "eslint": "9.39.0",
     "eslint-config-next": "16.1.6",
     "eslint-plugin-unused-imports": "4.4.1",
@@ -71,5 +77,51 @@
     "tsx": "4.21.0",
     "typescript": "5.9.3",
     "vitest": "4.1.0"
+  },
+  "build": {
+    "appId": "th.ac.fms.management",
+    "productName": "FMS Management System",
+    "directories": {
+      "output": "dist-desktop"
+    },
+    "asar": false,
+    "files": [
+      "desktop/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": ".next/standalone",
+        "to": "standalone",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "desktop/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "ระบบบริหารจัดการองค์กร FMS",
+      "installerIcon": "desktop/icon.ico",
+      "uninstallerIcon": "desktop/icon.ico"
+    }
   }
 }

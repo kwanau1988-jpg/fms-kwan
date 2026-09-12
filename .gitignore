@@ -13,3 +13,4 @@ e2e/.auth/
 .superpowers/
 setup-db.*
 /public/uploads/
+dist-desktop/
