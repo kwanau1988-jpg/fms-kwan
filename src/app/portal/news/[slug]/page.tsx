@@ -73,9 +73,10 @@ export default async function NewsDetailPage({
       )}
 
       {/* Article Content */}
-      <div className="prose prose-lg dark:prose-invert max-w-none leading-relaxed text-foreground/90 whitespace-pre-wrap">
-        {isTh ? article.contentTh : article.contentEn}
-      </div>
+      <div
+        className="prose prose-lg dark:prose-invert max-w-none leading-relaxed text-foreground/90 [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:my-3 [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:my-3 [&_h1]:text-3xl [&_h2]:text-2xl [&_h3]:text-xl [&_h3]:font-bold [&_h3]:my-3 [&_p]:my-2 [&_table]:border-collapse [&_table]:w-full [&_th]:border [&_th]:border-border [&_th]:p-2 [&_td]:border [&_td]:border-border [&_td]:p-2 [&_a]:text-brand [&_a]:underline"
+        dangerouslySetInnerHTML={{ __html: isTh ? article.contentTh : article.contentEn }}
+      />
 
       {/* Footer / Share */}
       <footer className="pt-8 border-t border-border/40 flex items-center justify-between">

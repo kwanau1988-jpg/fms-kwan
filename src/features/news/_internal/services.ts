@@ -223,6 +223,7 @@ export async function translateNewsWithGemini(
   const prompt = `You are an expert bilingual university communications specialist and professional translator.
 Translate and adapt the following Thai faculty news announcement into standard, professional university English.
 Preserve proper names, dates, academic positions, and formal tone accurately.
+If the Thai content contains rich text HTML tags (such as <p>, <strong>, <em>, <ul>, <ol>, <li>, <h3>, <h4>, <table>, <a>), preserve and match the exact HTML formatting structure in the translated English content.
 
 Thai Title:
 ${input.titleTh}

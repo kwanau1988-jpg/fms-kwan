@@ -14,6 +14,13 @@ import {
   getNewsArticlesAction,
   translateNewsWithGeminiAction,
 } from "@/features/news/actions";
+import { TinyEditor } from "./tiny-editor";
+
+const isHtmlEmpty = (html: string) => {
+  if (!html) return true;
+  const text = html.replace(/<[^>]*>/g, "").trim();
+  return text.length === 0;
+};
 
 interface Props {
   initialItems: NewsArticleDto[];
@@ -78,7 +85,7 @@ export function NewsClient({ initialItems, canManage }: Props) {
       toast.error(t("news.aiRequireThaiTitle"));
       return;
     }
-    if (!contentTh.trim()) {
+    if (isHtmlEmpty(contentTh)) {
       toast.error(t("news.aiRequireThaiContent"));
       return;
     }
@@ -104,7 +111,7 @@ export function NewsClient({ initialItems, canManage }: Props) {
   };
 
   const handleSave = () => {
-    if (!titleTh.trim() || !titleEn.trim() || !contentTh.trim() || !contentEn.trim()) {
+    if (!titleTh.trim() || !titleEn.trim() || isHtmlEmpty(contentTh) || isHtmlEmpty(contentEn)) {
       toast.error(locale === "th" ? "กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน" : "Please fill in all required fields");
       return;
     }
@@ -265,12 +272,12 @@ export function NewsClient({ initialItems, canManage }: Props) {
       {/* Create / Edit Modal Dialog */}
       {modalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="w-full max-w-2xl bg-card border border-border rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+          <div className="w-full max-w-4xl bg-card border border-border rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl max-h-[90vh] overflow-y-auto">
             <h2 className="text-xl font-bold text-foreground">
               {editingItem ? t("news.edit") : t("news.create")}
             </h2>
 
-            <div className="space-y-4">
+            <div className="space-y-5">
               {/* Thai Section */}
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-foreground">{t("news.titleTh")} *</label>
@@ -284,13 +291,16 @@ export function NewsClient({ initialItems, canManage }: Props) {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-foreground">{t("news.contentTh")} *</label>
-                <textarea
-                  rows={4}
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold text-foreground">{t("news.contentTh")} *</label>
+                  <span className="text-[11px] text-muted-foreground font-light">Tiny Editor (WYSIWYG)</span>
+                </div>
+                <TinyEditor
                   value={contentTh}
-                  onChange={(e) => setContentTh(e.target.value)}
-                  placeholder="เนื้อหาข่าวภาษาไทย..."
-                  className="w-full px-3.5 py-2 text-sm rounded-xl border border-border bg-background focus:outline-hidden focus:ring-2 focus:ring-brand"
+                  onChange={setContentTh}
+                  placeholder="เนื้อหาข่าวภาษาไทย หรือจัดรูปแบบข้อความ ตัวหนา ลิสต์รายการ ตาราง..."
+                  height={280}
+                  disabled={isPending}
                 />
               </div>
 
@@ -330,13 +340,16 @@ export function NewsClient({ initialItems, canManage }: Props) {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-foreground">{t("news.contentEn")} *</label>
-                <textarea
-                  rows={4}
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold text-foreground">{t("news.contentEn")} *</label>
+                  <span className="text-[11px] text-muted-foreground font-light">Tiny Editor (WYSIWYG)</span>
+                </div>
+                <TinyEditor
                   value={contentEn}
-                  onChange={(e) => setContentEn(e.target.value)}
+                  onChange={setContentEn}
                   placeholder="News content in English..."
-                  className="w-full px-3.5 py-2 text-sm rounded-xl border border-border bg-background focus:outline-hidden focus:ring-2 focus:ring-brand"
+                  height={280}
+                  disabled={isPending}
                 />
               </div>
 
