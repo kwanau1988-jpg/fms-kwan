@@ -1,15 +1,16 @@
 "use client";
 import { useCallback, useEffect, useState, useTransition } from "react";
-import { UserPlus } from "lucide-react";
+import { UserPlus, Upload, Download, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useT } from "@/shared/lib/i18n/client";
-import { listUsersAction, listRolesForPickerAction, createUserAction, updateUserAction, setUserActiveAction, issuePasswordLinkAction, requestEmailChangeAction } from "@/features/identity/actions";
+import { listUsersAction, listRolesForPickerAction, createUserAction, updateUserAction, setUserActiveAction, issuePasswordLinkAction, requestEmailChangeAction, exportUsersAction } from "@/features/identity/actions";
 import { UsersTableCard } from "./users-table-card";
 import { UserDialog } from "./user-dialog";
 import { LinkDialog } from "./link-dialog";
 import { ChangeEmailDialog } from "./change-email-dialog";
 import { SuspendDialog } from "./suspend-dialog";
+import { ImportUsersDialog } from "./import-users-dialog";
 import { emptyForm, type UserForm, type UserListItem, type RolePick } from "./types";
 
 const PER_PAGE = 20;
@@ -30,6 +31,34 @@ export function UsersClient({ canManage, selfId }: { canManage: boolean; selfId:
 
   const [dialog, setDialog] = useState<null | { kind: "create" } | { kind: "edit"; user: UserListItem } | { kind: "link"; link: string; hours: number; title: string; desc: string; mailDelivered: boolean } | { kind: "email"; user: UserListItem } | { kind: "suspend"; users: UserListItem[] }>(null);
   const [form, setForm] = useState<UserForm>(emptyForm());
+  const [importOpen, setImportOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+
+  async function handleExportCsv() {
+    setIsExporting(true);
+    try {
+      const res = await exportUsersAction({ search, status, roleId: roleId || undefined });
+      if (!res.ok) {
+        toast.error(res.error.message || t("users.exportFail"));
+        return;
+      }
+      const { filename, csv, count } = res.data;
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success(t("users.exportSuccess", { count }));
+    } catch {
+      toast.error(t("users.exportFail"));
+    } finally {
+      setIsExporting(false);
+    }
+  }
 
   useEffect(() => { const h = setTimeout(() => { setSearch(searchInput); setPage(1); }, 300); return () => clearTimeout(h); }, [searchInput]);
 
@@ -115,7 +144,39 @@ export function UsersClient({ canManage, selfId }: { canManage: boolean; selfId:
     <>
       <header className="ph hr">
         <h1 className="sr-only">{t("users.title")}</h1>
-        {canManage && <div className="acts ml-auto"><Button type="button" onClick={() => { setForm(emptyForm()); setDialog({ kind: "create" }); }}><UserPlus aria-hidden="true" />{t("users.addBtn")}</Button></div>}
+        <div className="acts ml-auto flex items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleExportCsv}
+            disabled={isExporting}
+            className="gap-1.5"
+          >
+            {isExporting ? <Loader2 className="size-4 animate-spin" /> : <Download className="size-4" />}
+            {t("users.exportCsv")}
+          </Button>
+          {canManage && (
+            <>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setImportOpen(true)}
+                className="gap-1.5"
+              >
+                <Upload className="size-4" />
+                {t("users.importCsv")}
+              </Button>
+              <Button
+                type="button"
+                onClick={() => { setForm(emptyForm()); setDialog({ kind: "create" }); }}
+                className="gap-1.5"
+              >
+                <UserPlus aria-hidden="true" className="size-4" />
+                {t("users.addBtn")}
+              </Button>
+            </>
+          )}
+        </div>
       </header>
       {/* canManage ของตารางปิดชั่วคราวขณะมี dialog เปิดอยู่ — คอลัมน์เลือกแถว/เมนูสามจุดของพื้นหลังหายไปด้วย
           (นอกจาก UX ที่ถูกต้องอยู่แล้ว คือพื้นหลังไม่ควรโต้ตอบได้ขณะมี dialog บัง — Radix aria-hides พื้นหลังให้
@@ -126,7 +187,7 @@ export function UsersClient({ canManage, selfId }: { canManage: boolean; selfId:
         searchInput={searchInput} onSearchInputChange={setSearchInput} status={status} onStatusChange={(s) => { setStatus(s); setPage(1); }}
         roleId={roleId} roles={roles} onRoleChange={(r) => { setRoleId(r); setPage(1); }}
         onPrev={() => setPage((p) => Math.max(1, p - 1))} onNext={() => setPage((p) => p + 1)}
-        canManage={canManage && dialog === null} selfId={selfId} selected={selected} onSelectedChange={setSelected}
+        canManage={canManage && dialog === null && !importOpen} selfId={selfId} selected={selected} onSelectedChange={setSelected}
         onEdit={(u) => { setForm({ name: u.name, email: u.email, roleIds: u.roles.map((r) => r.id), mustChangePassword: u.mustChangePassword }); setDialog({ kind: "edit", user: u }); }}
         onIssueLink={issueLink} onChangeEmail={(u) => setDialog({ kind: "email", user: u })}
         onSuspend={(list) => setDialog({ kind: "suspend", users: list })} onActivate={(u) => toggleActive([u], true)}
@@ -138,6 +199,12 @@ export function UsersClient({ canManage, selfId }: { canManage: boolean; selfId:
       {dialog?.kind === "link" && <LinkDialog open onOpenChange={() => setDialog(null)} title={dialog.title} description={dialog.desc} link={dialog.link} mailDelivered={dialog.mailDelivered} />}
       {dialog?.kind === "email" && <ChangeEmailDialog open onOpenChange={() => setDialog(null)} user={dialog.user} isSubmitting={pending} onSubmit={(e) => submitEmail(dialog.user, e)} />}
       {dialog?.kind === "suspend" && <SuspendDialog open onOpenChange={() => setDialog(null)} users={dialog.users} isSubmitting={pending} onConfirm={() => toggleActive(dialog.users, false)} />}
+      <ImportUsersDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        roles={roles}
+        onSuccess={() => void load()}
+      />
     </>
   );
 }

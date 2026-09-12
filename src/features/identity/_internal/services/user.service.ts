@@ -5,10 +5,12 @@ import { errors } from "@/shared/lib/errors";
 import { asLocale } from "@/shared/lib/i18n/config";
 import { logger } from "@/shared/lib/infra/logger";
 import { SUPER_ADMIN_CODE } from "../../permissions";
+import { hashPassword } from "@/shared/lib/security/password";
+import { generateCsv } from "@/shared/lib/format/csv";
 import { issueToken, consumeToken, TOKEN_TTL } from "../tokens";
 import { writeAudit } from "../audit";
 import { passwordSetupEmail, emailChangeEmail } from "../email-templates";
-import type { ListUsersQuery, RoleAssignment } from "../validations/users";
+import type { ListUsersQuery, RoleAssignment, ImportUserRow, ExportUsersQuery } from "../validations/users";
 import type { ScopeType } from "../grants";
 
 export interface UserListItem {
@@ -197,4 +199,207 @@ export async function confirmEmailChange(raw: string): Promise<boolean> {
     }
   });
   return true;
+}
+
+export interface ImportUserBatchResult {
+  total: number;
+  successCount: number;
+  failCount: number;
+  results: {
+    row: number;
+    email: string;
+    name: string;
+    status: "success" | "error";
+    error?: string;
+  }[];
+}
+
+export async function importUsersBatch(
+  actor: Actor,
+  items: ImportUserRow[],
+): Promise<ImportUserBatchResult> {
+  const availableRoles = await prisma.role.findMany({
+    where: { tenantId: actor.tenantId },
+    select: {
+      id: true,
+      code: true,
+      nameTh: true,
+      nameEn: true,
+      rolePermissions: { select: { permission: { select: { code: true } } } },
+    },
+  });
+
+  const roleMap = new Map<string, (typeof availableRoles)[0]>();
+  for (const r of availableRoles) {
+    roleMap.set(r.code.toUpperCase(), r);
+    roleMap.set(r.nameTh.toLowerCase(), r);
+    roleMap.set(r.nameEn.toLowerCase(), r);
+  }
+
+  const emails = items.map((i) => i.email.toLowerCase());
+  const existingUsers = await prisma.user.findMany({
+    where: { email: { in: emails } },
+    select: { email: true },
+  });
+  const existingEmailSet = new Set(existingUsers.map((u) => u.email.toLowerCase()));
+
+  const results: ImportUserBatchResult["results"] = [];
+  let successCount = 0;
+  let failCount = 0;
+
+  for (let idx = 0; idx < items.length; idx++) {
+    const item = items[idx];
+    const rowNum = idx + 1;
+    const email = item.email.toLowerCase();
+
+    // Check duplicate email
+    if (existingEmailSet.has(email)) {
+      failCount++;
+      results.push({ row: rowNum, email, name: item.name, status: "error", error: "email_already_exists" });
+      continue;
+    }
+
+    // Match role
+    const roleKey = item.role.trim();
+    const matchedRole = roleMap.get(roleKey.toUpperCase()) || roleMap.get(roleKey.toLowerCase());
+    if (!matchedRole) {
+      failCount++;
+      results.push({ row: rowNum, email, name: item.name, status: "error", error: "role_not_found" });
+      continue;
+    }
+
+    // Guard: RBAC permission check
+    if (!actor.isSuperAdmin) {
+      if (matchedRole.code === SUPER_ADMIN_CODE) {
+        failCount++;
+        results.push({ row: rowNum, email, name: item.name, status: "error", error: "super_admin_protected" });
+        continue;
+      }
+      const held = new Set(actor.permissions);
+      if (matchedRole.rolePermissions.some((rp) => !held.has(rp.permission.code))) {
+        failCount++;
+        results.push({ row: rowNum, email, name: item.name, status: "error", error: "cannot_grant_unheld_permission" });
+        continue;
+      }
+    }
+
+    let passwordHash: string | null = null;
+    let mustChangePassword = false;
+    if (item.password && item.password.trim().length >= 8) {
+      passwordHash = await hashPassword(item.password.trim());
+    } else {
+      mustChangePassword = true;
+    }
+
+    try {
+      await prisma.$transaction(async (tx) => {
+        const user = await tx.user.create({
+          data: {
+            email,
+            name: item.name,
+            passwordHash,
+            emailVerified: true,
+            mustChangePassword,
+          },
+        });
+        const ut = await tx.userTenant.create({
+          data: {
+            userId: user.id,
+            tenantId: actor.tenantId,
+          },
+        });
+        await tx.userRole.create({
+          data: {
+            userTenantId: ut.id,
+            roleId: matchedRole.id,
+            scopeType: "ALL",
+            scopeId: null,
+          },
+        });
+
+        if (!passwordHash) {
+          await issueToken({ userId: user.id, purpose: "PASSWORD_RESET", ttlMs: TOKEN_TTL.PASSWORD_SETUP }, tx);
+        }
+
+        await writeAudit({
+          tenantId: actor.tenantId,
+          actorId: actor.actorId,
+          action: "user.import",
+          entity: "user",
+          entityId: user.id,
+          after: { email, name: item.name, role: matchedRole.code },
+        }, tx);
+      });
+
+      existingEmailSet.add(email);
+      successCount++;
+      results.push({ row: rowNum, email, name: item.name, status: "success" });
+    } catch (err: unknown) {
+      failCount++;
+      const msg = err instanceof Error ? err.message : "unknown_error";
+      results.push({ row: rowNum, email, name: item.name, status: "error", error: msg });
+    }
+  }
+
+  return {
+    total: items.length,
+    successCount,
+    failCount,
+    results,
+  };
+}
+
+export async function exportUsers(
+  tenantId: string,
+  q: ExportUsersQuery,
+): Promise<{ filename: string; csv: string; count: number }> {
+  const where = {
+    tenantId,
+    ...(q.status === "active" ? { isActive: true, user: { isActive: true } } : q.status === "inactive" ? { OR: [{ isActive: false }, { user: { isActive: false } }] } : {}),
+    ...(q.roleId ? { userRoles: { some: { roleId: q.roleId } } } : {}),
+    ...(q.search ? { user: { OR: [{ name: { contains: q.search, mode: "insensitive" as const } }, { email: { contains: q.search, mode: "insensitive" as const } }] } } : {}),
+  };
+
+  const rows = await prisma.userTenant.findMany({
+    where,
+    orderBy: { user: { name: "asc" } },
+    include: {
+      user: true,
+      userRoles: {
+        select: {
+          role: { select: { code: true, nameTh: true, nameEn: true } },
+        },
+      },
+    },
+  });
+
+  const headers = [
+    "ชื่อ-สกุล",
+    "อีเมล",
+    "บทบาท",
+    "สถานะ",
+    "บังคับเปลี่ยนรหัสผ่าน",
+    "เข้าสู่ระบบล่าสุด",
+    "วันที่สร้าง",
+  ];
+
+  const dataRows = rows.map((r) => {
+    const rolesStr = r.userRoles.map((ur) => `${ur.role.nameTh} (${ur.role.code})`).join("; ");
+    const isActive = r.isActive && r.user.isActive;
+    return [
+      r.user.name,
+      r.user.email,
+      rolesStr || "-",
+      isActive ? "เปิดใช้งาน" : "ระงับการใช้งาน",
+      r.user.mustChangePassword ? "ใช่" : "ไม่ใช่",
+      r.user.lastLoginAt ? r.user.lastLoginAt.toISOString().slice(0, 19).replace("T", " ") : "-",
+      r.user.createdAt.toISOString().slice(0, 10),
+    ];
+  });
+
+  const csv = generateCsv(headers, dataRows);
+  const nowStr = new Date().toISOString().slice(0, 10);
+  const filename = `users_export_${nowStr}.csv`;
+
+  return { filename, csv, count: rows.length };
 }

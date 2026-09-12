@@ -6,7 +6,7 @@ import { env } from "@/shared/lib/infra/env";
 import { prisma } from "@/shared/lib/infra/prisma";
 import { P } from "../../permissions";
 import { requirePermission } from "../rbac";
-import { listUsersQuerySchema, createUserSchema, updateUserSchema, setUserActiveSchema, issuePasswordLinkSchema, requestEmailChangeSchema } from "../validations/users";
+import { listUsersQuerySchema, createUserSchema, updateUserSchema, setUserActiveSchema, issuePasswordLinkSchema, requestEmailChangeSchema, importUsersBatchSchema, exportUsersQuerySchema } from "../validations/users";
 import * as svc from "../services/user.service";
 
 const em = async () => ({ error: zodErrorMap(await getLocale()) });
@@ -71,4 +71,20 @@ export async function requestEmailChangeAction(input: unknown): Promise<ActionRe
 
 export async function confirmEmailChangeAction(token: string): Promise<ActionResult<boolean>> {
   return runAction(() => svc.confirmEmailChange(token));
+}
+
+export async function importUsersBatchAction(input: unknown): Promise<ActionResult<svc.ImportUserBatchResult>> {
+  return runAction(async () => {
+    const ctx = await requirePermission(P.usersManage);
+    const { users } = importUsersBatchSchema.parse(input, await em());
+    return svc.importUsersBatch(actorOf(ctx), users);
+  });
+}
+
+export async function exportUsersAction(query: unknown): Promise<ActionResult<{ filename: string; csv: string; count: number }>> {
+  return runAction(async () => {
+    const ctx = await requirePermission(P.usersRead);
+    const q = exportUsersQuerySchema.parse(query, await em());
+    return svc.exportUsers(ctx.tenantId, q);
+  });
 }
