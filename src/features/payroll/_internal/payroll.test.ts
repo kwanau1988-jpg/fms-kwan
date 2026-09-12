@@ -84,4 +84,69 @@ describe("payroll validations, crypto & math integrity", () => {
       expect(netPayable).toBe(44140);
     });
   });
+
+  describe("formatThaiBahtText utility", () => {
+    it("แปลงจำนวนเงินตัวเลขเป็นตัวอักษรภาษาไทยได้ถูกต้อง", async () => {
+      const { formatThaiBahtText } = await import("@/shared/lib/format/thai-baht");
+
+      expect(formatThaiBahtText(0)).toBe("ศูนย์บาทถ้วน");
+      expect(formatThaiBahtText(57902)).toBe("ห้าหมื่นเจ็ดพันเก้าร้อยสองบาทถ้วน");
+      expect(formatThaiBahtText(21)).toBe("ยี่สิบเอ็ดบาทถ้วน");
+      expect(formatThaiBahtText(101)).toBe("หนึ่งร้อยเอ็ดบาทถ้วน");
+      expect(formatThaiBahtText(3500.50)).toBe("สามพันห้าร้อยบาทห้าสิบสตางค์");
+    });
+  });
+
+  describe("Individual Payroll Slip & Credentials Schemas", () => {
+    it("validate upsertPayrollSlipSchema ตรวจสอบฟิลด์เงินและรหัสผ่าน", async () => {
+      const { upsertPayrollSlipSchema } = await import("./validations");
+
+      const valid = {
+        periodId: "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+        userId: "1c2deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6e",
+        baseSalary: 45000,
+        academicAllowance: 11200,
+        positionAllowance: 0,
+        specialAllowance: 2000,
+        taxWithholding: 2500,
+        socialSecurity: 750,
+        providentFund: 1800,
+        cooperatives: 1500,
+        bankAccountMasked: "xxx-x-xx5678-0",
+        loginPassword: "Password123!",
+      };
+
+      const parsed = upsertPayrollSlipSchema.parse(valid);
+      expect(parsed.baseSalary).toBe(45000);
+      expect(parsed.loginPassword).toBe("Password123!");
+
+      // Negative amount should fail
+      expect(() =>
+        upsertPayrollSlipSchema.parse({ ...valid, baseSalary: -100 }),
+      ).toThrow();
+
+      // Password less than 8 chars should fail
+      expect(() =>
+        upsertPayrollSlipSchema.parse({ ...valid, loginPassword: "short" }),
+      ).toThrow();
+    });
+
+    it("validate setUserPasswordDirectSchema ต้องการรหัสผ่านอย่างน้อย 8 ตัวอักษร", async () => {
+      const { setUserPasswordDirectSchema } = await import("./validations");
+
+      const valid = {
+        userId: "1c2deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6e",
+        password: "Pass1234Secure!",
+      };
+      expect(setUserPasswordDirectSchema.parse(valid).password).toBe("Pass1234Secure!");
+
+      expect(() =>
+        setUserPasswordDirectSchema.parse({
+          userId: "1c2deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6e",
+          password: "123",
+        }),
+      ).toThrow();
+    });
+  });
 });
+

@@ -2,10 +2,13 @@ import crypto from "crypto";
 import { prisma } from "@/shared/lib/infra/prisma";
 import { errors } from "@/shared/lib/errors";
 import { writeAudit } from "@/features/identity/server";
+import { hashPassword } from "@/shared/lib/security/password";
 import type {
   CreatePeriodInput,
   TogglePublishPeriodInput,
   GenerateDemoSlipsInput,
+  UpsertPayrollSlipInput,
+  SetUserPasswordDirectInput,
 } from "./validations";
 
 export interface PayrollBreakdown {
@@ -41,12 +44,27 @@ export interface PayrollSlipDto {
   userId: string;
   userName: string;
   userEmail: string;
+  academicTitle?: string | null;
+  positionTh?: string | null;
+  departmentTh?: string | null;
   netPayable: number;
   bankAccountMasked: string | null;
   downloadedAt: string | null;
   createdAt: string;
   breakdown?: PayrollBreakdown;
 }
+
+export interface EligiblePersonnelDto {
+  userId: string;
+  email: string;
+  name: string;
+  academicTitle?: string | null;
+  positionTh?: string | null;
+  departmentTh?: string | null;
+  hasPassword: boolean;
+  isActive: boolean;
+}
+
 
 const SECRET = process.env.AUTH_SECRET || "fms_payroll_confidential_salt_key_2026";
 const ENCRYPTION_KEY = crypto.createHash("sha256").update(SECRET).digest();
@@ -333,3 +351,368 @@ export async function getMySlipDetail(
     breakdown,
   };
 }
+
+export async function listEligiblePersonnel(tenantId: string): Promise<EligiblePersonnelDto[]> {
+  const userTenants = await prisma.userTenant.findMany({
+    where: { tenantId, isActive: true },
+    include: {
+      user: {
+        include: {
+          personnelProfile: true,
+        },
+      },
+    },
+    orderBy: { user: { name: "asc" } },
+  });
+
+  const existingUserIds = new Set(userTenants.map((ut) => ut.userId));
+
+  const results: EligiblePersonnelDto[] = userTenants.map((ut) => {
+    const profile = ut.user.personnelProfile;
+    return {
+      userId: ut.user.id,
+      email: ut.user.email,
+      name: ut.user.name,
+      academicTitle: profile?.academicTitle ?? null,
+      positionTh: profile?.positionTh ?? null,
+      departmentTh: profile?.departmentTh ?? null,
+      hasPassword: !!ut.user.passwordHash,
+      isActive: ut.isActive && ut.user.isActive,
+    };
+  });
+
+  const unlinkedProfiles = await prisma.personnelProfile.findMany({
+    where: {
+      tenantId,
+      isActive: true,
+      OR: [
+        { userId: null },
+        { userId: { notIn: Array.from(existingUserIds) } },
+      ],
+    },
+    orderBy: [{ displayOrder: "asc" }, { firstNameTh: "asc" }],
+  });
+
+  for (const p of unlinkedProfiles) {
+    let user = await prisma.user.findUnique({ where: { email: p.email.toLowerCase() } });
+    if (!user) {
+      const fullName = `${p.academicTitle ? p.academicTitle + " " : ""}${p.firstNameTh} ${p.lastNameTh}`.trim();
+      user = await prisma.user.create({
+        data: {
+          email: p.email.toLowerCase(),
+          name: fullName,
+        },
+      });
+      await prisma.userTenant.create({
+        data: {
+          userId: user.id,
+          tenantId,
+          isActive: true,
+        },
+      });
+      await prisma.personnelProfile.update({
+        where: { id: p.id },
+        data: { userId: user.id },
+      });
+    } else {
+      await prisma.userTenant.upsert({
+        where: { userId_tenantId: { userId: user.id, tenantId } },
+        update: { isActive: true },
+        create: { userId: user.id, tenantId, isActive: true },
+      });
+      if (p.userId !== user.id) {
+        await prisma.personnelProfile.update({
+          where: { id: p.id },
+          data: { userId: user.id },
+        });
+      }
+    }
+
+    if (!existingUserIds.has(user.id)) {
+      existingUserIds.add(user.id);
+      results.push({
+        userId: user.id,
+        email: user.email,
+        name: user.name,
+        academicTitle: p.academicTitle,
+        positionTh: p.positionTh,
+        departmentTh: p.departmentTh,
+        hasPassword: !!user.passwordHash,
+        isActive: true,
+      });
+    }
+  }
+
+  return results.sort((a, b) => a.name.localeCompare(b.name, "th"));
+}
+
+export async function listPeriodSlips(
+  tenantId: string,
+  periodId: string,
+): Promise<PayrollSlipDto[]> {
+  const slips = await prisma.payrollSlip.findMany({
+    where: {
+      tenantId,
+      periodId,
+    },
+    include: {
+      period: true,
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          personnelProfile: {
+            select: {
+              academicTitle: true,
+              positionTh: true,
+              departmentTh: true,
+            },
+          },
+        },
+      },
+    },
+    orderBy: { user: { name: "asc" } },
+  });
+
+  return slips.map((s) => {
+    let breakdown: PayrollBreakdown | undefined;
+    try {
+      breakdown = decryptPayload<PayrollBreakdown>(s.encryptedPayload);
+    } catch {
+      breakdown = undefined;
+    }
+
+    return {
+      id: s.id,
+      tenantId: s.tenantId,
+      periodId: s.periodId,
+      year: s.period.year,
+      month: s.period.month,
+      userId: s.userId,
+      userName: s.user?.name || s.user?.email || "User",
+      userEmail: s.user?.email || "",
+      academicTitle: s.user?.personnelProfile?.academicTitle ?? null,
+      positionTh: s.user?.personnelProfile?.positionTh ?? null,
+      departmentTh: s.user?.personnelProfile?.departmentTh ?? null,
+      netPayable: Number(s.netPayable),
+      bankAccountMasked: s.bankAccountMasked,
+      downloadedAt: s.downloadedAt ? s.downloadedAt.toISOString() : null,
+      createdAt: s.createdAt.toISOString(),
+      breakdown,
+    };
+  });
+}
+
+export async function upsertPayrollSlip(
+  tenantId: string,
+  input: UpsertPayrollSlipInput,
+  actorId?: string,
+): Promise<PayrollSlipDto> {
+  const period = await prisma.payrollPeriod.findFirst({
+    where: { id: input.periodId, tenantId },
+  });
+  if (!period) throw errors.not_found("payroll.periodNotFound");
+
+  const grossIncome =
+    input.baseSalary +
+    input.academicAllowance +
+    input.positionAllowance +
+    input.specialAllowance;
+
+  const totalDeductions =
+    input.taxWithholding +
+    input.socialSecurity +
+    input.providentFund +
+    input.cooperatives;
+
+  const netPayable = grossIncome - totalDeductions;
+
+  const breakdown: PayrollBreakdown = {
+    baseSalary: input.baseSalary,
+    academicAllowance: input.academicAllowance,
+    positionAllowance: input.positionAllowance,
+    specialAllowance: input.specialAllowance,
+    grossIncome,
+    taxWithholding: input.taxWithholding,
+    socialSecurity: input.socialSecurity,
+    providentFund: input.providentFund,
+    cooperatives: input.cooperatives,
+    totalDeductions,
+    netPayable,
+  };
+
+  const encryptedPayload = encryptPayload(breakdown);
+
+  const result = await prisma.$transaction(async (tx) => {
+    if (input.loginPassword && input.loginPassword.trim().length >= 8) {
+      const passwordHash = await hashPassword(input.loginPassword.trim());
+      await tx.user.update({
+        where: { id: input.userId },
+        data: {
+          passwordHash,
+          mustChangePassword: false,
+          emailVerified: true,
+          isActive: true,
+        },
+      });
+
+      await writeAudit(
+        {
+          tenantId,
+          actorId: actorId ?? null,
+          action: "user.set_password",
+          entity: "user",
+          entityId: input.userId,
+          after: { resetBy: "payroll_admin" },
+        },
+        tx,
+      );
+    }
+
+    const slip = await tx.payrollSlip.upsert({
+      where: {
+        periodId_userId: {
+          periodId: input.periodId,
+          userId: input.userId,
+        },
+      },
+      update: {
+        encryptedPayload,
+        netPayable,
+        bankAccountMasked: input.bankAccountMasked || null,
+      },
+      create: {
+        tenantId,
+        periodId: input.periodId,
+        userId: input.userId,
+        encryptedPayload,
+        netPayable,
+        bankAccountMasked: input.bankAccountMasked || null,
+      },
+      include: {
+        period: true,
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            personnelProfile: {
+              select: {
+                academicTitle: true,
+                positionTh: true,
+                departmentTh: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    await writeAudit(
+      {
+        tenantId,
+        actorId: actorId ?? null,
+        action: "payroll.slip_upsert",
+        entity: "payroll_slip",
+        entityId: slip.id,
+        after: {
+          userId: input.userId,
+          periodId: input.periodId,
+          netPayable,
+        },
+      },
+      tx,
+    );
+
+    return slip;
+  });
+
+  return {
+    id: result.id,
+    tenantId: result.tenantId,
+    periodId: result.periodId,
+    year: result.period.year,
+    month: result.period.month,
+    userId: result.userId,
+    userName: result.user?.name || result.user?.email || "User",
+    userEmail: result.user?.email || "",
+    academicTitle: result.user?.personnelProfile?.academicTitle ?? null,
+    positionTh: result.user?.personnelProfile?.positionTh ?? null,
+    departmentTh: result.user?.personnelProfile?.departmentTh ?? null,
+    netPayable: Number(result.netPayable),
+    bankAccountMasked: result.bankAccountMasked,
+    downloadedAt: result.downloadedAt ? result.downloadedAt.toISOString() : null,
+    createdAt: result.createdAt.toISOString(),
+    breakdown,
+  };
+}
+
+export async function deletePayrollSlip(
+  tenantId: string,
+  slipId: string,
+  actorId?: string,
+): Promise<void> {
+  const slip = await prisma.payrollSlip.findFirst({
+    where: { id: slipId, tenantId },
+  });
+  if (!slip) throw errors.not_found("payroll.slipNotFound");
+
+  await prisma.$transaction(async (tx) => {
+    await tx.payrollSlip.delete({
+      where: { id: slipId },
+    });
+
+    await writeAudit(
+      {
+        tenantId,
+        actorId: actorId ?? null,
+        action: "payroll.slip_delete",
+        entity: "payroll_slip",
+        entityId: slipId,
+        before: {
+          periodId: slip.periodId,
+          userId: slip.userId,
+          netPayable: Number(slip.netPayable),
+        },
+      },
+      tx,
+    );
+  });
+}
+
+export async function setUserLoginPassword(
+  tenantId: string,
+  input: SetUserPasswordDirectInput,
+  actorId?: string,
+): Promise<void> {
+  const membership = await prisma.userTenant.findFirst({
+    where: { userId: input.userId, tenantId },
+  });
+  if (!membership) throw errors.not_found("user_not_in_tenant");
+
+  const passwordHash = await hashPassword(input.password);
+  await prisma.$transaction(async (tx) => {
+    await tx.user.update({
+      where: { id: input.userId },
+      data: {
+        passwordHash,
+        mustChangePassword: false,
+        emailVerified: true,
+        isActive: true,
+      },
+    });
+
+    await writeAudit(
+      {
+        tenantId,
+        actorId: actorId ?? null,
+        action: "user.password_direct_set",
+        entity: "user",
+        entityId: input.userId,
+      },
+      tx,
+    );
+  });
+}
+

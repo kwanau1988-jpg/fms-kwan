@@ -10,6 +10,9 @@ import {
   createPeriodSchema,
   togglePublishPeriodSchema,
   generateDemoSlipsSchema,
+  upsertPayrollSlipSchema,
+  deletePayrollSlipSchema,
+  setUserPasswordDirectSchema,
 } from "./validations";
 import {
   listPeriods,
@@ -18,9 +21,16 @@ import {
   generateDemoSlipsForPeriod,
   listMySlips,
   getMySlipDetail,
+  listPeriodSlips,
+  listEligiblePersonnel,
+  upsertPayrollSlip,
+  deletePayrollSlip,
+  setUserLoginPassword,
   type PayrollPeriodDto,
   type PayrollSlipDto,
+  type EligiblePersonnelDto,
 } from "./services";
+
 
 export async function getMyPayrollSlipsAction(): Promise<ActionResult<PayrollSlipDto[]>> {
   return runAction(async () => {
@@ -82,3 +92,56 @@ export async function generateDemoSlipsAction(
     return { count };
   });
 }
+
+export async function getPeriodSlipsAction(
+  periodId: string,
+): Promise<ActionResult<PayrollSlipDto[]>> {
+  return runAction(async () => {
+    const ctx = await requirePermission(PAYROLL_P.payrollManage);
+    return listPeriodSlips(ctx.tenantId, periodId);
+  });
+}
+
+export async function getEligiblePersonnelAction(): Promise<ActionResult<EligiblePersonnelDto[]>> {
+  return runAction(async () => {
+    const ctx = await requirePermission(PAYROLL_P.payrollManage);
+    return listEligiblePersonnel(ctx.tenantId);
+  });
+}
+
+export async function upsertPayrollSlipAction(
+  input: unknown,
+): Promise<ActionResult<PayrollSlipDto>> {
+  return runAction(async () => {
+    const ctx = await requirePermission(PAYROLL_P.payrollManage);
+    const parsed = upsertPayrollSlipSchema.parse(input, { error: zodErrorMap(await getLocale()) });
+    const result = await upsertPayrollSlip(ctx.tenantId, parsed, ctx.userId);
+    revalidatePath("/payroll");
+    revalidatePath("/me/payroll");
+    return result;
+  });
+}
+
+export async function deletePayrollSlipAction(
+  slipId: string,
+): Promise<ActionResult<void>> {
+  return runAction(async () => {
+    const ctx = await requirePermission(PAYROLL_P.payrollManage);
+    const parsed = deletePayrollSlipSchema.parse({ slipId }, { error: zodErrorMap(await getLocale()) });
+    await deletePayrollSlip(ctx.tenantId, parsed.slipId, ctx.userId);
+    revalidatePath("/payroll");
+    revalidatePath("/me/payroll");
+  });
+}
+
+export async function setUserPayrollPasswordAction(
+  input: unknown,
+): Promise<ActionResult<void>> {
+  return runAction(async () => {
+    const ctx = await requirePermission(PAYROLL_P.payrollManage);
+    const parsed = setUserPasswordDirectSchema.parse(input, { error: zodErrorMap(await getLocale()) });
+    await setUserLoginPassword(ctx.tenantId, parsed, ctx.userId);
+    revalidatePath("/payroll");
+  });
+}
+
