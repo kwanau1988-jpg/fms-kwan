@@ -9,6 +9,19 @@ import type {
   UpdateDepartmentInput,
 } from "./validations";
 
+export interface PloItemDto {
+  code: string;
+  descTh: string;
+  descEn?: string;
+}
+
+export interface StudyPlanCategoryDto {
+  categoryTh: string;
+  categoryEn?: string;
+  credits: number;
+  description?: string;
+}
+
 export interface CurriculumDto {
   id: string;
   tenantId: string;
@@ -22,8 +35,14 @@ export interface CurriculumDto {
   degreeTh: string;
   degreeEn: string;
   degreeLevel: string;
+  philosophy?: string | null;
+  objectives?: string[];
+  plos?: PloItemDto[];
+  studyPlan?: StudyPlanCategoryDto[];
   totalCredits: number;
   tuitionFee: number | null;
+  careerPaths?: string[];
+  qualifications?: string | null;
   brochurePdfUrl: string | null;
   status: string;
   createdAt: string;
@@ -329,8 +348,14 @@ export async function listCurricula(tenantId: string): Promise<CurriculumDto[]> 
     degreeTh: item.degreeTh,
     degreeEn: item.degreeEn,
     degreeLevel: item.degreeLevel,
+    philosophy: item.philosophy,
+    objectives: (item.objectives as string[]) ?? [],
+    plos: (item.plos as unknown as PloItemDto[]) ?? [],
+    studyPlan: (item.studyPlan as unknown as StudyPlanCategoryDto[]) ?? [],
     totalCredits: item.totalCredits,
     tuitionFee: item.tuitionFee ? Number(item.tuitionFee) : null,
+    careerPaths: (item.careerPaths as string[]) ?? [],
+    qualifications: item.qualifications,
     brochurePdfUrl: item.brochurePdfUrl,
     status: item.status,
     createdAt: item.createdAt.toISOString(),
@@ -369,8 +394,14 @@ export async function listActiveCurricula(
     degreeTh: item.degreeTh,
     degreeEn: item.degreeEn,
     degreeLevel: item.degreeLevel,
+    philosophy: item.philosophy,
+    objectives: (item.objectives as string[]) ?? [],
+    plos: (item.plos as unknown as PloItemDto[]) ?? [],
+    studyPlan: (item.studyPlan as unknown as StudyPlanCategoryDto[]) ?? [],
     totalCredits: item.totalCredits,
     tuitionFee: item.tuitionFee ? Number(item.tuitionFee) : null,
+    careerPaths: (item.careerPaths as string[]) ?? [],
+    qualifications: item.qualifications,
     brochurePdfUrl: item.brochurePdfUrl,
     status: item.status,
     createdAt: item.createdAt.toISOString(),
@@ -392,8 +423,14 @@ export async function createCurriculum(
       degreeTh: input.degreeTh,
       degreeEn: input.degreeEn,
       degreeLevel: input.degreeLevel,
+      philosophy: input.philosophy || null,
+      objectives: input.objectives ?? [],
+      plos: (input.plos ?? []) as unknown as Prisma.InputJsonValue,
+      studyPlan: (input.studyPlan ?? []) as unknown as Prisma.InputJsonValue,
       totalCredits: input.totalCredits,
       tuitionFee: input.tuitionFee !== undefined ? input.tuitionFee : null,
+      careerPaths: input.careerPaths ?? [],
+      qualifications: input.qualifications || null,
       brochurePdfUrl: input.brochurePdfUrl || null,
       status: input.status,
     },
@@ -414,8 +451,14 @@ export async function createCurriculum(
     degreeTh: created.degreeTh,
     degreeEn: created.degreeEn,
     degreeLevel: created.degreeLevel,
+    philosophy: created.philosophy,
+    objectives: (created.objectives as string[]) ?? [],
+    plos: (created.plos as unknown as PloItemDto[]) ?? [],
+    studyPlan: (created.studyPlan as unknown as StudyPlanCategoryDto[]) ?? [],
     totalCredits: created.totalCredits,
     tuitionFee: created.tuitionFee ? Number(created.tuitionFee) : null,
+    careerPaths: (created.careerPaths as string[]) ?? [],
+    qualifications: created.qualifications,
     brochurePdfUrl: created.brochurePdfUrl,
     status: created.status,
     createdAt: created.createdAt.toISOString(),
@@ -437,8 +480,14 @@ export async function updateCurriculum(
       degreeTh: input.degreeTh,
       degreeEn: input.degreeEn,
       degreeLevel: input.degreeLevel,
+      philosophy: input.philosophy !== undefined ? input.philosophy : undefined,
+      objectives: input.objectives !== undefined ? input.objectives : undefined,
+      plos: input.plos !== undefined ? (input.plos as unknown as Prisma.InputJsonValue) : undefined,
+      studyPlan: input.studyPlan !== undefined ? (input.studyPlan as unknown as Prisma.InputJsonValue) : undefined,
       totalCredits: input.totalCredits,
       tuitionFee: input.tuitionFee !== undefined ? input.tuitionFee : null,
+      careerPaths: input.careerPaths !== undefined ? input.careerPaths : undefined,
+      qualifications: input.qualifications !== undefined ? input.qualifications : undefined,
       brochurePdfUrl: input.brochurePdfUrl || null,
       status: input.status,
     },
@@ -459,8 +508,14 @@ export async function updateCurriculum(
     degreeTh: updated.degreeTh,
     degreeEn: updated.degreeEn,
     degreeLevel: updated.degreeLevel,
+    philosophy: updated.philosophy,
+    objectives: (updated.objectives as string[]) ?? [],
+    plos: (updated.plos as unknown as PloItemDto[]) ?? [],
+    studyPlan: (updated.studyPlan as unknown as StudyPlanCategoryDto[]) ?? [],
     totalCredits: updated.totalCredits,
     tuitionFee: updated.tuitionFee ? Number(updated.tuitionFee) : null,
+    careerPaths: (updated.careerPaths as string[]) ?? [],
+    qualifications: updated.qualifications,
     brochurePdfUrl: updated.brochurePdfUrl,
     status: updated.status,
     createdAt: updated.createdAt.toISOString(),

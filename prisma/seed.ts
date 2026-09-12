@@ -236,6 +236,25 @@ async function main() {
     });
   }
 
+  let deptBuddhist = await prisma.department.findFirst({ where: { tenantId: core.tenantId, code: "DEPT-BUDDHIST" } });
+  if (!deptBuddhist) {
+    deptBuddhist = await prisma.department.create({
+      data: {
+        tenantId: core.tenantId,
+        code: "DEPT-BUDDHIST",
+        nameTh: "ภาควิชาพระพุทธศาสนา",
+        nameEn: "Department of Buddhist Studies",
+        description: "จัดการศึกษาพระพุทธศาสนาบูรณาการกับศาสตร์สมัยใหม่ ผลิตบัณฑิตให้มีความรู้ดี มีศีลธรรม นำสังคมสู่สันติสุข",
+        headName: "ผศ.ดร. พระมหาวีระชาติ ธีรสิทฺโธ (เพ็งแจ่ม)",
+        email: "buddhist.dept@faculty.edu",
+        phone: "045-123456",
+        officeRoom: "อาคารเรียนรวมและบริการวิชาการ วิทยาเขตอุบลราชธานี",
+        displayOrder: 5,
+        isActive: true,
+      },
+    });
+  }
+
   // Seed Faculty Curricula
   const curriculaCount = await prisma.curriculum.count({ where: { tenantId: core.tenantId } });
   if (curriculaCount === 0) {
@@ -296,6 +315,96 @@ async function main() {
       where: { tenantId: core.tenantId, code: "M.B.A.-01", departmentId: null },
       data: { departmentId: deptBa.id },
     });
+  }
+
+  // Seed / Update MKO 2 Buddhist Studies Curriculum
+  const currBuddhist = await prisma.curriculum.findFirst({ where: { tenantId: core.tenantId, code: "B.A.-BUDDHIST-70" } });
+  const buddhistData = {
+    tenantId: core.tenantId,
+    departmentId: deptBuddhist.id,
+    code: "B.A.-BUDDHIST-70",
+    nameTh: "หลักสูตรพุทธศาสตรบัณฑิต สาขาวิชาพระพุทธศาสนา (๔ ปี) (หลักสูตรปรับปรุง พ.ศ. ๒๕๗๐)",
+    nameEn: "Bachelor of Arts Program in Buddhist Studies (Revised B.E. 2570)",
+    degreeTh: "พุทธศาสตรบัณฑิต (พระพุทธศาสนา) [พธ.บ.]",
+    degreeEn: "Bachelor of Arts (Buddhist Studies) [B.A.]",
+    degreeLevel: "BACHELOR" as const,
+    totalCredits: 132,
+    tuitionFee: 32000,
+    philosophy: "จัดการศึกษาพระพุทธศาสนาบูรณาการกับศาสตร์สมัยใหม่ ผลิตบัณฑิตให้มีความรู้ดี มีศีลธรรม นำสังคมสู่สันติสุข",
+    objectives: [
+      "เพื่อผลิตบัณฑิตมีความรอบรู้ในหลักพระพุทธศาสนาและศาสตร์ที่เกี่ยวข้องสามารถประยุกต์องค์ความรู้กับศาสตร์สมัยใหม่ได้อย่างเหมาะสม",
+      "เพื่อผลิตบัณฑิตให้มีทักษะการถ่ายทอดหลักพุทธธรรมกับศาสตร์สมัยใหม่ เพื่อการเผยแผ่และการแก้ไขปัญหาสังคมในยุคปัจจุบันได้",
+      "เพื่อผลิตบัณฑิตสามารถปฏิบัติตนตามหลักคุณธรรม จริยธรรม ยึดมั่นในหลักพระพุทธศาสนา มีความรับผิดชอบต่อสังคม และเป็นแบบอย่างที่ดีในการดำเนินชีวิต",
+      "เพื่อผลิตบัณฑิตให้มีภาวะผู้นำ สามารถทำงานร่วมกับผู้อื่นและปฏิบัติงานเป็นทีมได้อย่างเหมาะสมพร้อมทั้งมีทักษะการเรียนรู้ตลอดชีวิตและสามารถปรับตัวต่อการเปลี่ยนแปลงของสังคมในศตวรรษที่ ๒๑",
+      "เพื่อผลิตบัณฑิตสามารถใช้เทคโนโลยีดิจิทัล สารสนเทศ พุทธนวัตกรรม เพื่อการสื่อสารการเผยแผ่พระพุทธศาสนา การจัดการศึกษา และการบริหารองค์กรได้อย่างเหมาะสม",
+    ],
+    plos: [
+      {
+        code: "PLO 1",
+        descTh: "มีความรอบรู้ในหลักพระพุทธศาสนาและศาสตร์ที่เกี่ยวข้อง สามารถประยุกต์องค์ความรู้กับศาสตร์สมัยใหม่ได้อย่างเหมาะสม",
+        descEn: "Demonstrate deep knowledge in Buddhist principles and related disciplines, integrating with modern sciences.",
+      },
+      {
+        code: "PLO 2",
+        descTh: "มีทักษะการถ่ายทอดหลักพุทธธรรมกับศาสตร์สมัยใหม่ เพื่อการเผยแผ่และการแก้ไขปัญหาสังคมในยุคปัจจุบันได้",
+        descEn: "Possess communication skills to convey Buddhist teachings with modern methods for propagation and societal problem-solving.",
+      },
+      {
+        code: "PLO 3",
+        descTh: "สามารถปฏิบัติตนตามหลักคุณธรรม จริยธรรม ยึดมั่นในหลักพระพุทธศาสนา มีความรับผิดชอบต่อสังคม และเป็นแบบอย่างที่ดีในการดำเนินชีวิต",
+        descEn: "Adhere to moral and ethical principles rooted in Buddhism, uphold social responsibility, and serve as role models.",
+      },
+      {
+        code: "PLO 4",
+        descTh: "มีภาวะผู้นำ สามารถทำงานร่วมกับผู้อื่นและปฏิบัติงานเป็นทีมได้อย่างเหมาะสม พร้อมทั้งมีทักษะการเรียนรู้ตลอดชีวิตและสามารถปรับตัวต่อการเปลี่ยนแปลงของสังคมในศตวรรษที่ ๒๑",
+        descEn: "Exhibit leadership, teamwork, lifelong learning capabilities, and adaptability to 21st-century societal transformations.",
+      },
+      {
+        code: "PLO 5",
+        descTh: "สามารถใช้เทคโนโลยีดิจิทัล สารสนเทศ พุทธนวัตกรรม เพื่อการสื่อสาร การเผยแผ่พระพุทธศาสนา การจัดการศึกษา และการบริหารองค์กรได้อย่างเหมาะสม",
+        descEn: "Utilize digital technologies, information systems, and Buddhist innovations for communication, education, and administration.",
+      },
+    ],
+    studyPlan: [
+      {
+        categoryTh: "๑) หมวดวิชาศึกษาทั่วไป (ไม่น้อยกว่า ๒๔ หน่วยกิต)",
+        categoryEn: "General Education Courses (Min. 24 Credits)",
+        credits: 24,
+        description: "วิชาบังคับ ๑๘ หน่วยกิต (มนุษย์กับสังคม, กฎหมายทั่วไป, คอมพิวเตอร์และดิจิทัล, อังกฤษเพื่อการสื่อสาร, ปรัชญาเบื้องต้น, สถิติวิจัย) + วิชาเลือก ๖ หน่วยกิต",
+      },
+      {
+        categoryTh: "๒) หมวดวิชาเฉพาะ (ไม่น้อยกว่า ๑๐๒ หน่วยกิต)",
+        categoryEn: "Major Courses (Min. 102 Credits)",
+        credits: 102,
+        description: "กลุ่มพระพุทธศาสนา ๓๐ หน่วยกิต (พระไตรปิฎก, บาลี, กรรมฐาน ๑-๔) + วิชาแกน ๓๓ หน่วยกิต (หลักพุทธธรรม, ปรัชญาเถรวาท, ธรรมบท, ชาดก, มหายาน) + วิชาเฉพาะด้าน ๓๓ หน่วยกิต + วิชาเลือก ๖ หน่วยกิต",
+      },
+      {
+        categoryTh: "๓) หมวดวิชาเลือกเสรี (ไม่น้อยกว่า ๖ หน่วยกิต)",
+        categoryEn: "Free Elective Courses (Min. 6 Credits)",
+        credits: 6,
+        description: "เลือกศึกษาในรายวิชาที่เปิดสอนในระดับปริญญาตรีของมหาวิทยาลัยตามความถนัดและความสนใจ",
+      },
+    ],
+    careerPaths: [
+      "นักวิชาการศาสนา / เจ้าหน้าที่ศาสนพิธี (สำนักงานพระพุทธศาสนาแห่งชาติ และกระทรวงวัฒนธรรม)",
+      "อนุศาสนาจารย์ (กองทัพบก กองทัพเรือ กองทัพอากาศ และสำนักงานตำรวจแห่งชาติ)",
+      "นักจัดกระบวนการเรียนรู้และสมาธิบำบัด (Mindfulness & Meditation Facilitator)",
+      "นักเยียวยาจิตใจและผู้ดูแลสุขภาวะทางจิตวิญญาณ (Spiritual Caregiver ในโรงพยาบาลและ Palliative Care)",
+      "นักสร้างสรรค์เนื้อหาทางศาสนา ศิลปวัฒนธรรม (Religious & Cultural Content Creator)",
+      "ผู้นำเที่ยวและผู้จัดการการท่องเที่ยวเชิงจิตวิญญาณและพุทธศิลป์ (Spiritual & Cultural Tourism Specialist)",
+      "นักวิชาการพัฒนาสังคม / นักสังคมสงเคราะห์ในหน่วยงานรัฐและองค์กรพัฒนาเอกชน (NGOs)",
+      "เจ้าหน้าที่ฝ่ายพัฒนาทรัพยากรมนุษย์ (HRD) และส่งเสริมจริยธรรมองค์กร (CSR)",
+      "พระธรรมทูต (ทั้งในและต่างประเทศ) / พระวิปัสสนาจารย์ / นักวิจัยด้านพุทธศาสน์ศึกษา",
+    ],
+    qualifications: "๑. พระภิกษุ/สามเณร และคฤหัสถ์ สำเร็จการศึกษาระดับมัธยมศึกษาตอนปลาย (ม.๖) หรือเทียบเท่า ๒. เป็นไปตามข้อบังคับมหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย ว่าด้วยการศึกษาระดับปริญญาตรี พ.ศ. ๒๕๖๖ ๓. หรือผ่านการคัดเลือกตามเกณฑ์ของสำนักงานปลัดกระทรวงการอุดมศึกษา วิทยาศาสตร์ วิจัยและนวัตกรรม (อว.)",
+    brochurePdfUrl: "/documents/mko2-buddhist-studies-2570.pdf",
+    status: "OPEN",
+  };
+
+  if (!currBuddhist) {
+    await prisma.curriculum.create({ data: buddhistData });
+  } else {
+    await prisma.curriculum.update({ where: { id: currBuddhist.id }, data: buddhistData });
   }
 
   // Seed Resources (Facilities & Vehicles)

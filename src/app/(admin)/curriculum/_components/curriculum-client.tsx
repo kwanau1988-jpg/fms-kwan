@@ -13,6 +13,13 @@ import {
   Layers,
   MapPin,
   UserCheck,
+  Sparkles,
+  Award,
+  FileText,
+  Compass,
+  Briefcase,
+  Download,
+  ExternalLink,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useT, useLocale } from "@/shared/lib/i18n/client";
@@ -71,6 +78,7 @@ export function CurriculumClient({
   const [deleteConfirmCurr, setDeleteConfirmCurr] = useState<CurriculumDto | null>(null);
 
   // Curriculum Form
+  const [currModalTab, setCurrModalTab] = useState<"general" | "outcomes" | "structure" | "docs">("general");
   const [currDeptId, setCurrDeptId] = useState<string>("");
   const [code, setCode] = useState("");
   const [nameTh, setNameTh] = useState("");
@@ -78,10 +86,20 @@ export function CurriculumClient({
   const [degreeTh, setDegreeTh] = useState("");
   const [degreeEn, setDegreeEn] = useState("");
   const [degreeLevel, setDegreeLevel] = useState<"BACHELOR" | "MASTER" | "DOCTORAL" | "SHORT_COURSE">("BACHELOR");
-  const [totalCredits, setTotalCredits] = useState(128);
+  const [totalCredits, setTotalCredits] = useState(132);
   const [tuitionFee, setTuitionFee] = useState<number | "">("");
   const [brochurePdfUrl, setBrochurePdfUrl] = useState("");
   const [status, setStatus] = useState<"OPEN" | "UPDATING" | "CLOSED">("OPEN");
+
+  // MKO 2 Details Form State
+  const [philosophy, setPhilosophy] = useState("");
+  const [objectivesText, setObjectivesText] = useState("");
+  const [plosText, setPlosText] = useState("");
+  const [genEdCredits, setGenEdCredits] = useState(24);
+  const [majorCredits, setMajorCredits] = useState(102);
+  const [freeElectiveCredits, setFreeElectiveCredits] = useState(6);
+  const [careerPathsText, setCareerPathsText] = useState("");
+  const [qualifications, setQualifications] = useState("");
 
   // ----------------------------------------------------
   // Department States
@@ -126,10 +144,19 @@ export function CurriculumClient({
     setDegreeTh("");
     setDegreeEn("");
     setDegreeLevel("BACHELOR");
-    setTotalCredits(128);
+    setTotalCredits(132);
     setTuitionFee("");
     setBrochurePdfUrl("");
     setStatus("OPEN");
+    setCurrModalTab("general");
+    setPhilosophy("");
+    setObjectivesText("");
+    setPlosText("");
+    setGenEdCredits(24);
+    setMajorCredits(102);
+    setFreeElectiveCredits(6);
+    setCareerPathsText("");
+    setQualifications("");
     setCurrModalOpen(true);
   };
 
@@ -146,7 +173,82 @@ export function CurriculumClient({
     setTuitionFee(item.tuitionFee ?? "");
     setBrochurePdfUrl(item.brochurePdfUrl || "");
     setStatus(item.status as "OPEN" | "CLOSED" | "UPDATING");
+    setCurrModalTab("general");
+    setPhilosophy(item.philosophy || "");
+    setObjectivesText((item.objectives || []).join("\n"));
+    setPlosText(
+      (item.plos || [])
+        .map((p) => (p.descEn ? `${p.code}: ${p.descTh} | ${p.descEn}` : `${p.code}: ${p.descTh}`))
+        .join("\n")
+    );
+    if (item.studyPlan && item.studyPlan.length >= 3) {
+      setGenEdCredits(item.studyPlan[0].credits || 24);
+      setMajorCredits(item.studyPlan[1].credits || 102);
+      setFreeElectiveCredits(item.studyPlan[2].credits || 6);
+    } else {
+      setGenEdCredits(24);
+      setMajorCredits(102);
+      setFreeElectiveCredits(6);
+    }
+    setCareerPathsText((item.careerPaths || []).join("\n"));
+    setQualifications(item.qualifications || "");
     setCurrModalOpen(true);
+  };
+
+  const loadMko2Template = () => {
+    const buddhistDept = departments.find(
+      (d) => d.code === "DEPT-BUDDHIST" || d.nameTh.includes("พระพุทธ")
+    );
+    if (buddhistDept) {
+      setCurrDeptId(buddhistDept.id);
+    }
+    setCode("B.A.-BUDDHIST-70");
+    setNameTh("หลักสูตรพุทธศาสตรบัณฑิต สาขาวิชาพระพุทธศาสนา (๔ ปี) (หลักสูตรปรับปรุง พ.ศ. ๒๕๗๐)");
+    setNameEn("Bachelor of Arts Program in Buddhist Studies (Revised B.E. 2570)");
+    setDegreeTh("พุทธศาสตรบัณฑิต (พระพุทธศาสนา) [พธ.บ.]");
+    setDegreeEn("Bachelor of Arts (Buddhist Studies) [B.A.]");
+    setDegreeLevel("BACHELOR");
+    setTotalCredits(132);
+    setTuitionFee(32000);
+    setStatus("OPEN");
+    setPhilosophy("จัดการศึกษาพระพุทธศาสนาบูรณาการกับศาสตร์สมัยใหม่ ผลิตบัณฑิตให้มีความรู้ดี มีศีลธรรม นำสังคมสู่สันติสุข");
+    setObjectivesText([
+      "เพื่อผลิตบัณฑิตมีความรอบรู้ในหลักพระพุทธศาสนาและศาสตร์ที่เกี่ยวข้องสามารถประยุกต์องค์ความรู้กับศาสตร์สมัยใหม่ได้อย่างเหมาะสม",
+      "เพื่อผลิตบัณฑิตให้มีทักษะการถ่ายทอดหลักพุทธธรรมกับศาสตร์สมัยใหม่ เพื่อการเผยแผ่และการแก้ไขปัญหาสังคมในยุคปัจจุบันได้",
+      "เพื่อผลิตบัณฑิตสามารถปฏิบัติตนตามหลักคุณธรรม จริยธรรม ยึดมั่นในหลักพระพุทธศาสนา มีความรับผิดชอบต่อสังคม และเป็นแบบอย่างที่ดีในการดำเนินชีวิต",
+      "เพื่อผลิตบัณฑิตให้มีภาวะผู้นำ สามารถทำงานร่วมกับผู้อื่นและปฏิบัติงานเป็นทีมได้อย่างเหมาะสมพร้อมทั้งมีทักษะการเรียนรู้ตลอดชีวิตและสามารถปรับตัวต่อการเปลี่ยนแปลงของสังคมในศตวรรษที่ ๒๑",
+      "เพื่อผลิตบัณฑิตสามารถใช้เทคโนโลยีดิจิทัล สารสนเทศ พุทธนวัตกรรม เพื่อการสื่อสารการเผยแผ่พระพุทธศาสนา การจัดการศึกษา และการบริหารองค์กรได้อย่างเหมาะสม",
+    ].join("\n"));
+    setPlosText([
+      "PLO 1: มีความรอบรู้ในหลักพระพุทธศาสนาและศาสตร์ที่เกี่ยวข้อง สามารถประยุกต์องค์ความรู้กับศาสตร์สมัยใหม่ได้อย่างเหมาะสม | Demonstrate deep knowledge in Buddhist principles and related disciplines, integrating with modern sciences.",
+      "PLO 2: มีทักษะการถ่ายทอดหลักพุทธธรรมกับศาสตร์สมัยใหม่ เพื่อการเผยแผ่และการแก้ไขปัญหาสังคมในยุคปัจจุบันได้ | Possess communication skills to convey Buddhist teachings with modern methods for propagation and societal problem-solving.",
+      "PLO 3: สามารถปฏิบัติตนตามหลักคุณธรรม จริยธรรม ยึดมั่นในหลักพระพุทธศาสนา มีความรับผิดชอบต่อสังคม และเป็นแบบอย่างที่ดีในการดำเนินชีวิต | Adhere to moral and ethical principles rooted in Buddhism, uphold social responsibility, and serve as role models.",
+      "PLO 4: มีภาวะผู้นำ สามารถทำงานร่วมกับผู้อื่นและปฏิบัติงานเป็นทีมได้อย่างเหมาะสม พร้อมทั้งมีทักษะการเรียนรู้ตลอดชีวิตและสามารถปรับตัวต่อการเปลี่ยนแปลงของสังคมในศตวรรษที่ ๒๑ | Exhibit leadership, teamwork, lifelong learning capabilities, and adaptability to 21st-century societal transformations.",
+      "PLO 5: สามารถใช้เทคโนโลยีดิจิทัล สารสนเทศ พุทธนวัตกรรม เพื่อการสื่อสาร การเผยแผ่พระพุทธศาสนา การจัดการศึกษา และการบริหารองค์กรได้อย่างเหมาะสม | Utilize digital technologies, information systems, and Buddhist innovations for communication, education, and administration.",
+    ].join("\n"));
+    setGenEdCredits(24);
+    setMajorCredits(102);
+    setFreeElectiveCredits(6);
+    setCareerPathsText([
+      "นักวิชาการศาสนา / เจ้าหน้าที่ศาสนพิธี (สำนักงานพระพุทธศาสนาแห่งชาติ และกระทรวงวัฒนธรรม)",
+      "อนุศาสนาจารย์ (กองทัพบก กองทัพเรือ กองทัพอากาศ และสำนักงานตำรวจแห่งชาติ)",
+      "นักจัดกระบวนการเรียนรู้และสมาธิบำบัด (Mindfulness & Meditation Facilitator)",
+      "นักเยียวยาจิตใจและผู้ดูแลสุขภาวะทางจิตวิญญาณ (Spiritual Caregiver ในโรงพยาบาลและ Palliative Care)",
+      "นักสร้างสรรค์เนื้อหาทางศาสนา ศิลปวัฒนธรรม (Religious & Cultural Content Creator)",
+      "ผู้นำเที่ยวและผู้จัดการการท่องเที่ยวเชิงจิตวิญญาณและพุทธศิลป์ (Spiritual & Cultural Tourism Specialist)",
+      "นักวิชาการพัฒนาสังคม / นักสังคมสงเคราะห์ในหน่วยงานรัฐและองค์กรพัฒนาเอกชน (NGOs)",
+      "เจ้าหน้าที่ฝ่ายพัฒนาทรัพยากรมนุษย์ (HRD) และส่งเสริมจริยธรรมองค์กร (CSR)",
+      "พระธรรมทูต (ทั้งในและต่างประเทศ) / พระวิปัสสนาจารย์ / นักวิจัยด้านพุทธศาสน์ศึกษา",
+    ].join("\n"));
+    setQualifications(
+      "๑. พระภิกษุ/สามเณร และคฤหัสถ์ สำเร็จการศึกษาระดับมัธยมศึกษาตอนปลาย (ม.๖) หรือเทียบเท่า ๒. เป็นไปตามข้อบังคับมหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย ว่าด้วยการศึกษาระดับปริญญาตรี พ.ศ. ๒๕๖๖ ๓. หรือผ่านการคัดเลือกตามเกณฑ์ของสำนักงานปลัดกระทรวงการอุดมศึกษา วิทยาศาสตร์ วิจัยและนวัตกรรม (อว.)"
+    );
+    setBrochurePdfUrl("/documents/mko2-buddhist-studies-2570.pdf");
+    toast.success(
+      isTh
+        ? "นำเข้าข้อมูลมาตรฐาน มคอ. 2 (พุทธศาสตรบัณฑิต ๒๕๗๐) เรียบร้อยแล้ว"
+        : "Loaded TQF 2 Buddhist Studies template successfully"
+    );
   };
 
   const handleSaveCurriculum = () => {
@@ -155,19 +257,81 @@ export function CurriculumClient({
       return;
     }
 
+    const parsedObjectives = objectivesText
+      .split("\n")
+      .map((s) => s.trim().replace(/^\d+[\.\)]\s*/, ""))
+      .filter(Boolean);
+
+    const parsedPlos = plosText
+      .split("\n")
+      .map((line, idx) => {
+        const trimmed = line.trim();
+        if (!trimmed) return null;
+        let codeStr = `PLO ${idx + 1}`;
+        let descTh = trimmed;
+        let descEn = "";
+
+        if (trimmed.includes("|")) {
+          const parts = trimmed.split("|");
+          descTh = parts[0].trim();
+          descEn = parts.slice(1).join("|").trim();
+        }
+
+        const match = descTh.match(/^(PLO\s*\d+)\s*[:：\-]\s*(.*)$/i);
+        if (match) {
+          codeStr = match[1].toUpperCase().replace(/\s+/, " ");
+          descTh = match[2].trim();
+        }
+
+        return { code: codeStr, descTh, descEn };
+      })
+      .filter((p): p is { code: string; descTh: string; descEn: string } => p !== null);
+
+    const parsedCareerPaths = careerPathsText
+      .split("\n")
+      .map((s) => s.trim().replace(/^[-•*]\s*/, "").replace(/^\d+[\.\)]\s*/, ""))
+      .filter(Boolean);
+
+    const studyPlan = [
+      {
+        categoryTh: "๑) หมวดวิชาศึกษาทั่วไป (ไม่น้อยกว่า ๒๔ หน่วยกิต)",
+        categoryEn: "General Education Courses (Min. 24 Credits)",
+        credits: Number(genEdCredits) || 0,
+        description: "กลุ่มวิชาภาษา มนุษยศาสตร์ สังคมศาสตร์ วิทยาศาสตร์และคณิตศาสตร์",
+      },
+      {
+        categoryTh: "๒) หมวดวิชาเฉพาะ (ไม่น้อยกว่า ๑๐๒ หน่วยกิต)",
+        categoryEn: "Major Courses (Min. 102 Credits)",
+        credits: Number(majorCredits) || 0,
+        description: "วิชาแกนพระพุทธศาสนา วิชาเฉพาะด้าน และวิชาเลือกเฉพาะสาขา",
+      },
+      {
+        categoryTh: "๓) หมวดวิชาเลือกเสรี (ไม่น้อยกว่า ๖ หน่วยกิต)",
+        categoryEn: "Free Elective Courses (Min. 6 Credits)",
+        credits: Number(freeElectiveCredits) || 0,
+        description: "เลือกศึกษาในรายวิชาที่เปิดสอนระดับปริญญาตรีของมหาวิทยาลัยตามความสนใจ",
+      },
+    ];
+
     startTransition(async () => {
       if (editingCurr) {
         const res = await updateCurriculumAction({
           id: editingCurr.id,
           departmentId: currDeptId ? currDeptId : null,
-          code,
-          nameTh,
-          nameEn,
-          degreeTh,
-          degreeEn,
+          code: code.trim(),
+          nameTh: nameTh.trim(),
+          nameEn: nameEn.trim() || nameTh.trim(),
+          degreeTh: degreeTh.trim(),
+          degreeEn: degreeEn.trim() || degreeTh.trim(),
           degreeLevel,
-          totalCredits,
+          philosophy: philosophy.trim() || null,
+          objectives: parsedObjectives,
+          plos: parsedPlos,
+          studyPlan,
+          totalCredits: Number(totalCredits) || 120,
           tuitionFee: tuitionFee === "" ? undefined : Number(tuitionFee),
+          careerPaths: parsedCareerPaths,
+          qualifications: qualifications.trim() || null,
           brochurePdfUrl: brochurePdfUrl.trim() || undefined,
           status,
         });
@@ -182,14 +346,20 @@ export function CurriculumClient({
       } else {
         const res = await createCurriculumAction({
           departmentId: currDeptId ? currDeptId : null,
-          code,
-          nameTh,
-          nameEn,
-          degreeTh,
-          degreeEn,
+          code: code.trim(),
+          nameTh: nameTh.trim(),
+          nameEn: nameEn.trim() || nameTh.trim(),
+          degreeTh: degreeTh.trim(),
+          degreeEn: degreeEn.trim() || degreeTh.trim(),
           degreeLevel,
-          totalCredits,
+          philosophy: philosophy.trim() || null,
+          objectives: parsedObjectives,
+          plos: parsedPlos,
+          studyPlan,
+          totalCredits: Number(totalCredits) || 120,
           tuitionFee: tuitionFee === "" ? undefined : Number(tuitionFee),
+          careerPaths: parsedCareerPaths,
+          qualifications: qualifications.trim() || null,
           brochurePdfUrl: brochurePdfUrl.trim() || undefined,
           status,
         });
@@ -503,7 +673,25 @@ export function CurriculumClient({
                       <tr key={item.id} className="hover:bg-muted/30 transition-colors">
                         <td className="px-6 py-4 font-mono font-semibold text-xs text-brand">{item.code}</td>
                         <td className="px-6 py-4">
-                          <div className="font-semibold text-foreground">{item.nameTh}</div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-foreground">{item.nameTh}</span>
+                            {item.philosophy && (
+                              <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30">
+                                มคอ. 2
+                              </span>
+                            )}
+                            {item.brochurePdfUrl && (
+                              <a
+                                href={item.brochurePdfUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="p-1 rounded text-muted-foreground hover:text-brand transition-colors"
+                                title={isTh ? "เปิดดูไฟล์ มคอ. 2 (PDF)" : "View TQF 2 PDF"}
+                              >
+                                <Download className="w-3.5 h-3.5" />
+                              </a>
+                            )}
+                          </div>
                           <div className="text-xs text-muted-foreground font-light">{item.degreeTh}</div>
                         </td>
                         <td className="px-6 py-4">
@@ -697,173 +885,486 @@ export function CurriculumClient({
       )}
 
       {/* ---------------------------------------------------- */}
-      {/* MODAL: CREATE / EDIT CURRICULUM */}
+      {/* MODAL: CREATE / EDIT CURRICULUM (WITH TQF 2 SUPPORT) */}
       {/* ---------------------------------------------------- */}
       {currModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="w-full max-w-2xl bg-card border border-border rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl max-h-[90vh] overflow-y-auto">
-            <h2 className="text-xl font-bold text-foreground">
-              {editingCurr ? t("curriculum.edit") : t("curriculum.create")}
-            </h2>
-
-            <div className="space-y-4">
-              {/* Department selector */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-                  <Building2 className="w-3.5 h-3.5 text-brand" />
-                  <span>{t("curriculum.department")}</span>
-                </label>
-                <select
-                  value={currDeptId}
-                  onChange={(e) => setCurrDeptId(e.target.value)}
-                  className="w-full px-3.5 py-2 text-sm rounded-xl border border-border bg-background text-foreground"
-                >
-                  <option value="">{t("curriculum.departmentPlaceholder")}</option>
-                  {departments
-                    .filter((d) => d.isActive || d.id === currDeptId)
-                    .map((d) => (
-                      <option key={d.id} value={d.id}>
-                        {d.code} - {isTh ? d.nameTh : d.nameEn}
-                      </option>
-                    ))}
-                </select>
+          <div className="w-full max-w-3xl bg-card border border-border rounded-3xl p-6 sm:p-8 space-y-5 shadow-2xl max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-border">
+              <div className="space-y-0.5">
+                <h2 className="text-xl font-bold text-foreground">
+                  {editingCurr ? t("curriculum.edit") : t("curriculum.create")}
+                </h2>
+                <p className="text-xs text-muted-foreground">
+                  {isTh
+                    ? "กำหนดรายละเอียดหลักสูตร โครงสร้างหน่วยกิต และผลลัพธ์การเรียนรู้ (มคอ. 2)"
+                    : "Configure curriculum specs, credit structure, and TQF 2 outcomes"}
+                </p>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-foreground">{t("curriculum.code")} *</label>
-                  <input
-                    type="text"
-                    value={code}
-                    onChange={(e) => setCode(e.target.value)}
-                    placeholder="เช่น B.B.A.-01"
-                    className="w-full px-3.5 py-2 text-sm rounded-xl border border-border bg-background"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-foreground">{t("curriculum.degreeLevel")}</label>
-                  <select
-                    value={degreeLevel}
-                    onChange={(e) =>
-                      setDegreeLevel(e.target.value as "BACHELOR" | "MASTER" | "DOCTORAL" | "SHORT_COURSE")
-                    }
-                    className="w-full px-3.5 py-2 text-sm rounded-xl border border-border bg-background"
-                  >
-                    <option value="BACHELOR">{t("curriculum.level.BACHELOR")}</option>
-                    <option value="MASTER">{t("curriculum.level.MASTER")}</option>
-                    <option value="DOCTORAL">{t("curriculum.level.DOCTORAL")}</option>
-                    <option value="SHORT_COURSE">{t("curriculum.level.SHORT_COURSE")}</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-foreground">{t("curriculum.nameTh")} *</label>
-                <input
-                  type="text"
-                  value={nameTh}
-                  onChange={(e) => setNameTh(e.target.value)}
-                  placeholder="เช่น หลักสูตรบริหารธุรกิจบัณฑิต สาขาวิชาการตลาดดิจิทัล"
-                  className="w-full px-3.5 py-2 text-sm rounded-xl border border-border bg-background"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-foreground">{t("curriculum.nameEn")}</label>
-                <input
-                  type="text"
-                  value={nameEn}
-                  onChange={(e) => setNameEn(e.target.value)}
-                  placeholder="e.g. Bachelor of Business Administration in Digital Marketing"
-                  className="w-full px-3.5 py-2 text-sm rounded-xl border border-border bg-background"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-foreground">{t("curriculum.degreeTh")} *</label>
-                  <input
-                    type="text"
-                    value={degreeTh}
-                    onChange={(e) => setDegreeTh(e.target.value)}
-                    placeholder="เช่น บธ.บ. (การตลาดดิจิทัล)"
-                    className="w-full px-3.5 py-2 text-sm rounded-xl border border-border bg-background"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-foreground">{t("curriculum.degreeEn")}</label>
-                  <input
-                    type="text"
-                    value={degreeEn}
-                    onChange={(e) => setDegreeEn(e.target.value)}
-                    placeholder="e.g. B.B.A. (Digital Marketing)"
-                    className="w-full px-3.5 py-2 text-sm rounded-xl border border-border bg-background"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-3">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-foreground">{t("curriculum.totalCredits")}</label>
-                  <input
-                    type="number"
-                    value={totalCredits}
-                    onChange={(e) => setTotalCredits(Number(e.target.value))}
-                    className="w-full px-3.5 py-2 text-sm rounded-xl border border-border bg-background"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-foreground">{t("curriculum.tuitionFee")}</label>
-                  <input
-                    type="number"
-                    value={tuitionFee}
-                    onChange={(e) => setTuitionFee(e.target.value === "" ? "" : Number(e.target.value))}
-                    placeholder="บาท"
-                    className="w-full px-3.5 py-2 text-sm rounded-xl border border-border bg-background"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-foreground">{t("curriculum.status")}</label>
-                  <select
-                    value={status}
-                    onChange={(e) => setStatus(e.target.value as "OPEN" | "CLOSED" | "UPDATING")}
-                    className="w-full px-3.5 py-2 text-sm rounded-xl border border-border bg-background"
-                  >
-                    <option value="OPEN">OPEN (เปิดรับสมัคร)</option>
-                    <option value="UPDATING">UPDATING (กำลังปรับปรุง)</option>
-                    <option value="CLOSED">CLOSED (ปิดรับ)</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-foreground">ลิงก์เล่มหลักสูตร PDF</label>
-                <input
-                  type="url"
-                  value={brochurePdfUrl}
-                  onChange={(e) => setBrochurePdfUrl(e.target.value)}
-                  placeholder="https://.../curriculum-2026.pdf"
-                  className="w-full px-3.5 py-2 text-sm rounded-xl border border-border bg-background"
-                />
-              </div>
+              <button
+                type="button"
+                onClick={loadMko2Template}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 text-xs font-semibold border border-amber-500/30 transition-colors cursor-pointer"
+                title={isTh ? "ดึงข้อมูลตัวอย่าง มคอ. 2 พระพุทธศาสนา 2570 เข้าแบบฟอร์มทันที" : "Populate with TQF 2 template"}
+              >
+                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                <span>{isTh ? "เติมข้อมูลตัวอย่าง มคอ. 2" : "Load TQF 2 Template"}</span>
+              </button>
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-4 border-t border-border">
-              <Button
-                variant="outline"
-                onClick={() => setCurrModalOpen(false)}
-                disabled={isPending}
-                className="rounded-xl"
+            {/* Modal Sub-Tabs */}
+            <div className="flex border-b border-border/60 gap-1 overflow-x-auto">
+              <button
+                type="button"
+                onClick={() => setCurrModalTab("general")}
+                className={`px-3.5 py-2 text-xs font-semibold border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
+                  currModalTab === "general"
+                    ? "border-brand text-brand"
+                    : "border-transparent text-muted-foreground hover:text-foreground"
+                }`}
               >
-                {t("common.cancel")}
-              </Button>
-              <Button
-                onClick={handleSaveCurriculum}
-                disabled={isPending}
-                className="rounded-xl bg-brand text-on-brand hover:bg-brand/90"
+                {isTh ? "๑. ข้อมูลทั่วไป" : "1. General Info"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setCurrModalTab("outcomes")}
+                className={`px-3.5 py-2 text-xs font-semibold border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
+                  currModalTab === "outcomes"
+                    ? "border-brand text-brand"
+                    : "border-transparent text-muted-foreground hover:text-foreground"
+                }`}
               >
-                {isPending ? "..." : t("common.save")}
-              </Button>
+                {isTh ? "๒. ปรัชญาและ PLOs" : "2. Philosophy & PLOs"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setCurrModalTab("structure")}
+                className={`px-3.5 py-2 text-xs font-semibold border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
+                  currModalTab === "structure"
+                    ? "border-brand text-brand"
+                    : "border-transparent text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {isTh ? "๓. โครงสร้างและอาชีพ" : "3. Structure & Careers"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setCurrModalTab("docs")}
+                className={`px-3.5 py-2 text-xs font-semibold border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
+                  currModalTab === "docs"
+                    ? "border-brand text-brand"
+                    : "border-transparent text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {isTh ? "๔. เอกสาร มคอ. 2 (PDF)" : "4. TQF 2 Document"}
+              </button>
+            </div>
+
+            {/* Modal Tab Content */}
+            <div className="space-y-4">
+              {/* TAB 1: GENERAL */}
+              {currModalTab === "general" && (
+                <div className="space-y-4">
+                  {/* Department selector */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                      <Building2 className="w-3.5 h-3.5 text-brand" />
+                      <span>{t("curriculum.department")}</span>
+                    </label>
+                    <select
+                      value={currDeptId}
+                      onChange={(e) => setCurrDeptId(e.target.value)}
+                      className="w-full px-3.5 py-2 text-sm rounded-xl border border-border bg-background text-foreground"
+                    >
+                      <option value="">{t("curriculum.departmentPlaceholder")}</option>
+                      {departments
+                        .filter((d) => d.isActive || d.id === currDeptId)
+                        .map((d) => (
+                          <option key={d.id} value={d.id}>
+                            {d.code} - {isTh ? d.nameTh : d.nameEn}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-foreground">{t("curriculum.code")} *</label>
+                      <input
+                        type="text"
+                        value={code}
+                        onChange={(e) => setCode(e.target.value)}
+                        placeholder="เช่น B.A.-BUDDHIST-70"
+                        className="w-full px-3.5 py-2 text-sm rounded-xl border border-border bg-background"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-foreground">{t("curriculum.degreeLevel")}</label>
+                      <select
+                        value={degreeLevel}
+                        onChange={(e) =>
+                          setDegreeLevel(e.target.value as "BACHELOR" | "MASTER" | "DOCTORAL" | "SHORT_COURSE")
+                        }
+                        className="w-full px-3.5 py-2 text-sm rounded-xl border border-border bg-background"
+                      >
+                        <option value="BACHELOR">{t("curriculum.level.BACHELOR")}</option>
+                        <option value="MASTER">{t("curriculum.level.MASTER")}</option>
+                        <option value="DOCTORAL">{t("curriculum.level.DOCTORAL")}</option>
+                        <option value="SHORT_COURSE">{t("curriculum.level.SHORT_COURSE")}</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-foreground">{t("curriculum.nameTh")} *</label>
+                    <input
+                      type="text"
+                      value={nameTh}
+                      onChange={(e) => setNameTh(e.target.value)}
+                      placeholder="เช่น หลักสูตรพุทธศาสตรบัณฑิต สาขาวิชาพระพุทธศาสนา (๔ ปี) (หลักสูตรปรับปรุง พ.ศ. ๒๕๗๐)"
+                      className="w-full px-3.5 py-2 text-sm rounded-xl border border-border bg-background"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-foreground">{t("curriculum.nameEn")}</label>
+                    <input
+                      type="text"
+                      value={nameEn}
+                      onChange={(e) => setNameEn(e.target.value)}
+                      placeholder="e.g. Bachelor of Arts Program in Buddhist Studies (Revised B.E. 2570)"
+                      className="w-full px-3.5 py-2 text-sm rounded-xl border border-border bg-background"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-foreground">{t("curriculum.degreeTh")} *</label>
+                      <input
+                        type="text"
+                        value={degreeTh}
+                        onChange={(e) => setDegreeTh(e.target.value)}
+                        placeholder="เช่น พุทธศาสตรบัณฑิต (พระพุทธศาสนา) [พธ.บ.]"
+                        className="w-full px-3.5 py-2 text-sm rounded-xl border border-border bg-background"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-foreground">{t("curriculum.degreeEn")}</label>
+                      <input
+                        type="text"
+                        value={degreeEn}
+                        onChange={(e) => setDegreeEn(e.target.value)}
+                        placeholder="e.g. Bachelor of Arts (Buddhist Studies) [B.A.]"
+                        className="w-full px-3.5 py-2 text-sm rounded-xl border border-border bg-background"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-foreground">{t("curriculum.totalCredits")}</label>
+                      <input
+                        type="number"
+                        value={totalCredits}
+                        onChange={(e) => setTotalCredits(Number(e.target.value))}
+                        className="w-full px-3.5 py-2 text-sm rounded-xl border border-border bg-background"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-foreground">{t("curriculum.tuitionFee")}</label>
+                      <input
+                        type="number"
+                        value={tuitionFee}
+                        onChange={(e) => setTuitionFee(e.target.value === "" ? "" : Number(e.target.value))}
+                        placeholder="เช่น 32000"
+                        className="w-full px-3.5 py-2 text-sm rounded-xl border border-border bg-background"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-foreground">{t("curriculum.status")}</label>
+                      <select
+                        value={status}
+                        onChange={(e) => setStatus(e.target.value as "OPEN" | "CLOSED" | "UPDATING")}
+                        className="w-full px-3.5 py-2 text-sm rounded-xl border border-border bg-background"
+                      >
+                        <option value="OPEN">OPEN (เปิดรับสมัคร)</option>
+                        <option value="UPDATING">UPDATING (กำลังปรับปรุง)</option>
+                        <option value="CLOSED">CLOSED (ปิดรับ)</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 2: OUTCOMES (PHILOSOPHY, OBJECTIVES, PLOS) */}
+              {currModalTab === "outcomes" && (
+                <div className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                      <Compass className="w-3.5 h-3.5 text-brand" />
+                      <span>{isTh ? "ปรัชญาของหลักสูตร" : "Program Philosophy"}</span>
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={philosophy}
+                      onChange={(e) => setPhilosophy(e.target.value)}
+                      placeholder={
+                        isTh
+                          ? "เช่น จัดการศึกษาพระพุทธศาสนาบูรณาการกับศาสตร์สมัยใหม่ ผลิตบัณฑิตให้มีความรู้ดี มีศีลธรรม นำสังคมสู่สันติสุข"
+                          : "Program philosophy statement..."
+                      }
+                      className="w-full px-3.5 py-2 text-sm rounded-xl border border-border bg-background resize-none"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                      <FileText className="w-3.5 h-3.5 text-brand" />
+                      <span>{isTh ? "วัตถุประสงค์ของหลักสูตร (ระบุข้อละ 1 บรรทัด)" : "Program Objectives (1 per line)"}</span>
+                    </label>
+                    <textarea
+                      rows={5}
+                      value={objectivesText}
+                      onChange={(e) => setObjectivesText(e.target.value)}
+                      placeholder={
+                        isTh
+                          ? "๑. เพื่อผลิตบัณฑิตมีความรอบรู้ในหลักพระพุทธศาสนา...\n๒. เพื่อผลิตบัณฑิตให้มีทักษะการถ่ายทอดหลักพุทธธรรม...\n๓. เพื่อผลิตบัณฑิตสามารถปฏิบัติตนตามหลักคุณธรรม..."
+                          : "1. Objective 1\n2. Objective 2"
+                      }
+                      className="w-full px-3.5 py-2 text-xs rounded-xl border border-border bg-background font-sans leading-relaxed"
+                    />
+                    <p className="text-[11px] text-muted-foreground">
+                      {isTh
+                        ? "ระบบจะตัดขึ้นข้อใหม่ให้อัตโนมัติเมื่อขึ้นบรรทัดใหม่"
+                        : "Each line represents one program objective."}
+                    </p>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                      <Award className="w-3.5 h-3.5 text-brand" />
+                      <span>
+                        {isTh
+                          ? "ผลลัพธ์การเรียนรู้ที่คาดหวัง (PLOs) (ระบุข้อละ 1 บรรทัด หรือใช้รูปแบบ 'PLO 1: ข้อความไทย | English')"
+                          : "Program Learning Outcomes (PLOs)"}
+                      </span>
+                    </label>
+                    <textarea
+                      rows={6}
+                      value={plosText}
+                      onChange={(e) => setPlosText(e.target.value)}
+                      placeholder={
+                        "PLO 1: มีความรอบรู้ในหลักพระพุทธศาสนาและศาสตร์ที่เกี่ยวข้อง... | Demonstrate deep knowledge in Buddhist principles...\nPLO 2: มีทักษะการถ่ายทอดหลักพุทธธรรม... | Possess communication skills to convey Buddhist teachings...\nPLO 3: สามารถปฏิบัติตนตามหลักคุณธรรม จริยธรรม..."
+                      }
+                      className="w-full px-3.5 py-2 text-xs rounded-xl border border-border bg-background font-mono leading-relaxed"
+                    />
+                    <p className="text-[11px] text-muted-foreground">
+                      {isTh
+                        ? "สามารถคั่นคำแปลภาษาอังกฤษด้วยสัญลักษณ์ | (ไปป์) เพื่อรองรับ 2 ภาษาในหน้า Portal"
+                        : "Use | pipe character to separate Thai description from English translation."}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 3: STRUCTURE & CAREERS */}
+              {currModalTab === "structure" && (
+                <div className="space-y-4">
+                  <div className="p-4 rounded-2xl bg-muted/40 border border-border/60 space-y-3">
+                    <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                      <Layers className="w-3.5 h-3.5 text-brand" />
+                      <span>{isTh ? "โครงสร้างหมวดวิชาและจำนวนหน่วยกิต (ตาม มคอ. 2)" : "Course Structure by Category"}</span>
+                    </span>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-semibold text-muted-foreground">
+                          {isTh ? "หมวดวิชาศึกษาทั่วไป (หน่วยกิต)" : "GenEd Credits"}
+                        </label>
+                        <input
+                          type="number"
+                          value={genEdCredits}
+                          onChange={(e) => setGenEdCredits(Number(e.target.value))}
+                          className="w-full px-3 py-1.5 text-xs rounded-xl border border-border bg-background"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-semibold text-muted-foreground">
+                          {isTh ? "หมวดวิชาเฉพาะ/สาขา (หน่วยกิต)" : "Major Credits"}
+                        </label>
+                        <input
+                          type="number"
+                          value={majorCredits}
+                          onChange={(e) => setMajorCredits(Number(e.target.value))}
+                          className="w-full px-3 py-1.5 text-xs rounded-xl border border-border bg-background"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-semibold text-muted-foreground">
+                          {isTh ? "หมวดวิชาเลือกเสรี (หน่วยกิต)" : "Free Elective Credits"}
+                        </label>
+                        <input
+                          type="number"
+                          value={freeElectiveCredits}
+                          onChange={(e) => setFreeElectiveCredits(Number(e.target.value))}
+                          className="w-full px-3 py-1.5 text-xs rounded-xl border border-border bg-background"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-1 text-xs">
+                      <span className="text-muted-foreground">
+                        {isTh ? "รวมหน่วยกิตหมวดวิชา:" : "Computed Total:"}{" "}
+                        <strong className="text-foreground">{genEdCredits + majorCredits + freeElectiveCredits}</strong>{" "}
+                        {isTh ? "หน่วยกิต" : "Credits"}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setTotalCredits(genEdCredits + majorCredits + freeElectiveCredits)}
+                        className="text-[11px] text-brand hover:underline font-semibold cursor-pointer"
+                      >
+                        {isTh ? "ซิงค์ไปยังจำนวนหน่วยกิตรวม" : "Sync to Total Credits"}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                      <Briefcase className="w-3.5 h-3.5 text-brand" />
+                      <span>{isTh ? "อาชีพที่สามารถประกอบได้หลังสำเร็จการศึกษา (ระบุบรรทัดละ 1 อาชีพ)" : "Career Paths (1 per line)"}</span>
+                    </label>
+                    <textarea
+                      rows={5}
+                      value={careerPathsText}
+                      onChange={(e) => setCareerPathsText(e.target.value)}
+                      placeholder={
+                        isTh
+                          ? "นักวิชาการศาสนา / เจ้าหน้าที่ศาสนพิธี\nอนุศาสนาจารย์ (ทหาร-ตำรวจ)\nนักจัดกระบวนการเรียนรู้และสมาธิบำบัด\nนักเยียวยาจิตใจและผู้ดูแลสุขภาวะทางจิตวิญญาณ\nนักสร้างสรรค์เนื้อหาทางศาสนาและศิลปวัฒนธรรม"
+                          : "Religious Affairs Officer\nMindfulness Facilitator\nSpiritual Caregiver"
+                      }
+                      className="w-full px-3.5 py-2 text-xs rounded-xl border border-border bg-background leading-relaxed"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                      <UserCheck className="w-3.5 h-3.5 text-brand" />
+                      <span>{isTh ? "คุณสมบัติของผู้เข้าศึกษา" : "Admission Qualifications"}</span>
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={qualifications}
+                      onChange={(e) => setQualifications(e.target.value)}
+                      placeholder={
+                        isTh
+                          ? "๑. สำเร็จการศึกษาระดับมัธยมศึกษาตอนปลาย (ม.๖) หรือเทียบเท่า ๒. เป็นไปตามระเบียบมหาวิทยาลัย..."
+                          : "High school graduate or equivalent..."
+                      }
+                      className="w-full px-3.5 py-2 text-xs rounded-xl border border-border bg-background leading-relaxed"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 4: DOCS & PDF */}
+              {currModalTab === "docs" && (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                      <Download className="w-3.5 h-3.5 text-brand" />
+                      <span>{isTh ? "ลิงก์เล่มหลักสูตร มคอ. 2 (PDF)" : "TQF 2 Document URL (PDF)"}</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={brochurePdfUrl}
+                      onChange={(e) => setBrochurePdfUrl(e.target.value)}
+                      placeholder="/documents/mko2-buddhist-studies-2570.pdf หรือ https://..."
+                      className="w-full px-3.5 py-2 text-sm rounded-xl border border-border bg-background"
+                    />
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => setBrochurePdfUrl("/documents/mko2-buddhist-studies-2570.pdf")}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-muted hover:bg-muted/80 text-[11px] font-medium text-foreground transition-colors cursor-pointer"
+                      >
+                        <span>{isTh ? "ใช้ไฟล์ มคอ. 2 พระพุทธศาสนา ๒๕๗๐" : "Use Buddhist Studies 2570 PDF"}</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {brochurePdfUrl && (
+                    <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2 text-xs text-emerald-700 dark:text-emerald-400 font-medium">
+                        <FileText className="w-4 h-4" />
+                        <span>{isTh ? "พร้อมเผยแพร่และให้ดาวน์โหลดผ่าน Portal" : "Ready for download via Portal"}</span>
+                      </div>
+                      <a
+                        href={brochurePdfUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1 text-xs text-emerald-700 dark:text-emerald-400 hover:underline font-semibold"
+                      >
+                        <span>{isTh ? "เปิดดูไฟล์" : "View File"}</span>
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-border">
+              <div className="flex items-center gap-2">
+                {currModalTab !== "general" && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      if (currModalTab === "outcomes") setCurrModalTab("general");
+                      else if (currModalTab === "structure") setCurrModalTab("outcomes");
+                      else if (currModalTab === "docs") setCurrModalTab("structure");
+                    }}
+                    className="rounded-xl text-xs"
+                  >
+                    {isTh ? "← ย้อนกลับ" : "← Previous"}
+                  </Button>
+                )}
+                {currModalTab !== "docs" && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      if (currModalTab === "general") setCurrModalTab("outcomes");
+                      else if (currModalTab === "outcomes") setCurrModalTab("structure");
+                      else if (currModalTab === "structure") setCurrModalTab("docs");
+                    }}
+                    className="rounded-xl text-xs"
+                  >
+                    {isTh ? "ถัดไป →" : "Next →"}
+                  </Button>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setCurrModalOpen(false)}
+                  disabled={isPending}
+                  className="rounded-xl"
+                >
+                  {t("common.cancel")}
+                </Button>
+                <Button
+                  onClick={handleSaveCurriculum}
+                  disabled={isPending}
+                  className="rounded-xl bg-brand text-on-brand hover:bg-brand/90"
+                >
+                  {isPending ? "..." : t("common.save")}
+                </Button>
+              </div>
             </div>
           </div>
         </div>

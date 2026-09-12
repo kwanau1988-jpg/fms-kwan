@@ -63,6 +63,7 @@
     "eslint-config-next": "16.1.6",
     "eslint-plugin-unused-imports": "4.4.1",
     "jsdom": "28.1.0",
+    "pdf-parse": "2.4.5",
     "prisma": "6.19.3",
     "shadcn": "3.8.5",
     "tailwindcss": "4.3.3",

@@ -1,5 +1,5 @@
 export { CURRICULUM_P } from "./permissions";
-export type { CurriculumDto, DepartmentDto } from "./_internal/services";
+export type { CurriculumDto, DepartmentDto, PloItemDto, StudyPlanCategoryDto } from "./_internal/services";
 export type {
   CreateCurriculumInput,
   UpdateCurriculumInput,

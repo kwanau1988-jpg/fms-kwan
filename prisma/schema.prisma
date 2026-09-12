@@ -353,10 +353,14 @@ model Curriculum {
   degreeTh       String       @map("degree_th") @db.VarChar(255)
   degreeEn       String       @map("degree_en") @db.VarChar(255)
   degreeLevel    DegreeLevel  @default(BACHELOR) @map("degree_level")
+  philosophy     String?      @db.Text
+  objectives     Json         @default("[]") @db.JsonB
+  plos           Json         @default("[]") @db.JsonB
   studyPlan      Json         @default("[]") @db.JsonB
   totalCredits   Int          @default(0) @map("total_credits")
   tuitionFee     Decimal?     @map("tuition_fee") @db.Decimal(10, 2)
   careerPaths    Json         @default("[]") @db.JsonB
+  qualifications String?      @db.Text
   brochurePdfUrl String?      @map("brochure_pdf_url") @db.VarChar(500)
   status         String       @default("OPEN") @db.VarChar(50)
   createdAt      DateTime     @default(now()) @map("created_at") @db.Timestamptz()

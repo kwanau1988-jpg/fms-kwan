@@ -1,5 +1,18 @@
 import { z } from "zod";
 
+export const ploItemSchema = z.object({
+  code: z.string().min(1),
+  descTh: z.string().min(1),
+  descEn: z.string().optional().default(""),
+});
+
+export const studyPlanCategorySchema = z.object({
+  categoryTh: z.string().min(1),
+  categoryEn: z.string().optional().default(""),
+  credits: z.coerce.number().min(0),
+  description: z.string().optional().default(""),
+});
+
 export const createCurriculumSchema = z.object({
   departmentId: z.string().uuid().nullable().optional(),
   code: z.string().min(1).max(50),
@@ -8,9 +21,15 @@ export const createCurriculumSchema = z.object({
   degreeTh: z.string().min(1).max(255),
   degreeEn: z.string().min(1).max(255),
   degreeLevel: z.enum(["BACHELOR", "MASTER", "DOCTORAL", "SHORT_COURSE"]).default("BACHELOR"),
+  philosophy: z.string().max(3000).optional().nullable(),
+  objectives: z.array(z.string()).optional().default([]),
+  plos: z.array(ploItemSchema).optional().default([]),
+  studyPlan: z.array(studyPlanCategorySchema).optional().default([]),
   totalCredits: z.coerce.number().min(0).default(120),
   tuitionFee: z.coerce.number().min(0).optional(),
-  brochurePdfUrl: z.string().url().optional().or(z.literal("")),
+  careerPaths: z.array(z.string()).optional().default([]),
+  qualifications: z.string().max(3000).optional().nullable(),
+  brochurePdfUrl: z.string().optional().or(z.literal("")),
   status: z.enum(["OPEN", "UPDATING", "CLOSED"]).default("OPEN"),
 });
 
